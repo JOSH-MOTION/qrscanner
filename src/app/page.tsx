@@ -12,6 +12,27 @@ import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Bri
 
 type QrCodeType = 'website' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard';
 
+type WifiData = {
+  ssid: string;
+  encryption: 'WPA' | 'WEP' | 'nopass';
+  password?: string;
+};
+
+type VCardData = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  company: string;
+  jobTitle: string;
+  website: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+};
+
 export default function QRCodeGenerator() {
   const [inputValue, setInputValue] = useState<string>('https://firebase.google.com');
   const [qrValue, setQrValue] = useState<string>('https://firebase.google.com');
@@ -19,12 +40,45 @@ export default function QRCodeGenerator() {
   const [bgColor, setBgColor] = useState<string>('#ffffff');
   const [qrType, setQrType] = useState<QrCodeType>('website');
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(event.target.value);
+  const [wifiData, setWifiData] = useState<WifiData>({ ssid: '', encryption: 'WPA', password: '' });
+  const [vcardData, setVcardData] = useState<VCardData>({
+    firstName: '', lastName: '', phone: '', email: '',
+    company: '', jobTitle: '', website: '', street: '', city: '', state: '', zip: '', country: ''
+  });
+
+  const handleWifiChange = (e: React.ChangeEvent<HTMLInputElement> | string, field: keyof WifiData | 'encryption') => {
+    if (typeof e === 'string') {
+        setWifiData(prev => ({ ...prev, encryption: e as WifiData['encryption'] }));
+    } else {
+        setWifiData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    }
+  };
+
+  const handleVcardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setVcardData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const generateQRCode = () => {
-    setQrValue(inputValue);
+    if (qrType === 'website') {
+      setQrValue(inputValue);
+    } else if (qrType === 'wifi') {
+      const { ssid, encryption, password } = wifiData;
+      setQrValue(`WIFI:T:${encryption};S:${ssid};${encryption !== 'nopass' ? `P:${password};` : ''};`);
+    } else if (qrType === 'vcard') {
+      const { firstName, lastName, phone, email, company, jobTitle, website, street, city, state, zip, country } = vcardData;
+      const vCardString = `BEGIN:VCARD
+VERSION:3.0
+N:${lastName};${firstName}
+FN:${firstName} ${lastName}
+ORG:${company}
+TITLE:${jobTitle}
+TEL;TYPE=WORK,VOICE:${phone}
+EMAIL:${email}
+URL:${website}
+ADR;TYPE=WORK:;;${street};${city};${state};${zip};${country}
+END:VCARD`;
+      setQrValue(vCardString);
+    }
   };
 
   const downloadQRCode = () => {
@@ -62,12 +116,102 @@ export default function QRCodeGenerator() {
               id="qr-input"
               type="text"
               value={inputValue}
-              onChange={handleInputChange}
+              onChange={(e) => setInputValue(e.target.value)}
               placeholder="e.g. https://example.com"
             />
           </div>
         );
-      // We'll add other cases here later
+      case 'wifi':
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="ssid">Network Name (SSID)</Label>
+              <Input id="ssid" name="ssid" value={wifiData.ssid} onChange={handleWifiChange} placeholder="e.g. MyHomeWiFi" />
+            </div>
+            <div className="space-y-2">
+              <Label>Encryption</Label>
+              <Select value={wifiData.encryption} onValueChange={(value) => handleWifiChange(value, 'encryption')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="WPA">WPA/WPA2</SelectItem>
+                  <SelectItem value="WEP">WEP</SelectItem>
+                  <SelectItem value="nopass">None</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {wifiData.encryption !== 'nopass' && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" name="password" type="password" value={wifiData.password} onChange={handleWifiChange} />
+              </div>
+            )}
+          </div>
+        )
+      case 'vcard':
+        return (
+            <div className="space-y-4 max-h-60 overflow-y-auto p-1">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input id="firstName" name="firstName" value={vcardData.firstName} onChange={handleVcardChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input id="lastName" name="lastName" value={vcardData.lastName} onChange={handleVcardChange} />
+                    </div>
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="phone">Phone</Label>
+                        <Input id="phone" name="phone" type="tel" value={vcardData.phone} onChange={handleVcardChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" name="email" type="email" value={vcardData.email} onChange={handleVcardChange} />
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="company">Company</Label>
+                        <Input id="company" name="company" value={vcardData.company} onChange={handleVcardChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="jobTitle">Job Title</Label>
+                        <Input id="jobTitle" name="jobTitle" value={vcardData.jobTitle} onChange={handleVcardChange} />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input id="website" name="website" value={vcardData.website} onChange={handleVcardChange} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="street">Street</Label>
+                    <Input id="street" name="street" value={vcardData.street} onChange={handleVcardChange} />
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="city">City</Label>
+                        <Input id="city" name="city" value={vcardData.city} onChange={handleVcardChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="state">State</Label>
+                        <Input id="state" name="state" value={vcardData.state} onChange={handleVcardChange} />
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="zip">ZIP Code</Label>
+                        <Input id="zip" name="zip" value={vcardData.zip} onChange={handleVcardChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="country">Country</Label>
+                        <Input id="country" name="country" value={vcardData.country} onChange={handleVcardChange} />
+                    </div>
+                </div>
+            </div>
+        )
       default:
         return <p className="text-sm text-muted-foreground text-center">Select a QR code type to see more options.</p>;
     }
@@ -83,6 +227,19 @@ export default function QRCodeGenerator() {
     { value: 'business', label: 'Business', icon: Briefcase },
     { value: 'vcard', label: 'vCard', icon: Contact },
   ];
+  
+  const isGenerateDisabled = () => {
+      switch(qrType) {
+          case 'website':
+              return !inputValue;
+          case 'wifi':
+              return !wifiData.ssid;
+          case 'vcard':
+              return !vcardData.firstName || !vcardData.lastName;
+          default:
+              return true;
+      }
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
@@ -149,7 +306,7 @@ export default function QRCodeGenerator() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-center gap-2">
-          <Button onClick={generateQRCode} disabled={qrType !== 'website'}>Generate QR Code</Button>
+          <Button onClick={generateQRCode} disabled={isGenerateDisabled()}>Generate QR Code</Button>
           <Button variant="outline" onClick={downloadQRCode} disabled={!qrValue}>
             Download
           </Button>
@@ -158,3 +315,5 @@ export default function QRCodeGenerator() {
     </div>
   );
 }
+
+    
