@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QrCode } from 'lucide-react';
+import { QrCode, Palette } from 'lucide-react';
 
 export default function QRCodeGenerator() {
   const [inputValue, setInputValue] = useState<string>('https://firebase.google.com');
   const [qrValue, setQrValue] = useState<string>('https://firebase.google.com');
+  const [fgColor, setFgColor] = useState<string>('#000000');
+  const [bgColor, setBgColor] = useState<string>('#ffffff');
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
@@ -31,7 +33,14 @@ export default function QRCodeGenerator() {
       img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
-        ctx?.drawImage(img, 0, 0);
+        // The QR Code SVG from the library has a white background by default.
+        // To make downloads with custom background colors work, we first draw the background color
+        // and then draw the QR code image on top of it.
+        if (ctx) {
+          ctx.fillStyle = bgColor;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+        }
         const pngFile = canvas.toDataURL("image/png");
         const downloadLink = document.createElement("a");
         downloadLink.download = "qrcode.png";
@@ -54,19 +63,40 @@ export default function QRCodeGenerator() {
         <CardContent className="flex flex-col items-center justify-center gap-4">
           {qrValue && (
             <div className="p-4 bg-white rounded-lg border">
-              <QRCodeSVG id="qr-code-svg" value={qrValue} size={256} />
+              <QRCodeSVG 
+                id="qr-code-svg" 
+                value={qrValue} 
+                size={256} 
+                fgColor={fgColor}
+                bgColor={bgColor}
+                level="L"
+                includeMargin={false}
+              />
             </div>
           )}
 
-          <div className="w-full space-y-2">
-            <Label htmlFor="qr-input">Enter text or URL</Label>
-            <Input
-              id="qr-input"
-              type="text"
-              value={inputValue}
-              onChange={handleInputChange}
-              placeholder="e.g. https://example.com"
-            />
+          <div className="w-full space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="qr-input">Enter text or URL</Label>
+              <Input
+                id="qr-input"
+                type="text"
+                value={inputValue}
+                onChange={handleInputChange}
+                placeholder="e.g. https://example.com"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <Palette className="w-5 h-5 text-gray-500" />
+              <div className="flex items-center gap-2">
+                <Label htmlFor="fg-color">Foreground</Label>
+                <Input id="fg-color" type="color" value={fgColor} onChange={(e) => setFgColor(e.target.value)} className="w-12 h-8 p-1" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="bg-color">Background</Label>
+                <Input id="bg-color" type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-12 h-8 p-1" />
+              </div>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-center gap-2">
