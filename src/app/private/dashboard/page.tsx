@@ -16,30 +16,44 @@ export default function AdminDashboard() {
     const [requests, setRequests] = useState<LaptopRequestWithId[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchRequests = async () => {
-            try {
-                const fetchedRequests = await getLaptopRequests();
-                setRequests(fetchedRequests);
-            } catch (error) {
-                console.error("Failed to fetch laptop requests:", error);
-                // Handle error (e.g., show a toast message)
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchRequests = async () => {
+        try {
+            const fetchedRequests = await getLaptopRequests();
+            setRequests(fetchedRequests);
+        } catch (error) {
+            console.error("Failed to fetch laptop requests:", error);
+            // Handle error (e.g., show a toast message)
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchRequests();
     }, []);
 
     const handleDownloadCsv = () => {
         if (requests.length === 0) return;
 
-        const headers = ["ID", "Student Name", "Generation", "Subject", "Laptop ID", "Time Collected", "Condition", "Other Details"];
+        const headers = ["ID", "Student Name", "Generation", "Subject", "Laptop ID", "Time Collected", "Condition", "Other Details", "Status", "Time Returned", "Condition at Return", "Return Condition Other", "Supervisor"];
         const csvRows = [
             headers.join(','),
             ...requests.map(row => 
-                [row.id, row.studentName, row.generation, row.subject, row.laptopId, row.timeCollected, row.condition, row.conditionOther || ''].join(',')
+                [
+                    row.id, 
+                    row.studentName, 
+                    row.generation, 
+                    row.subject, 
+                    row.laptopId, 
+                    row.timeCollected, 
+                    row.condition, 
+                    row.conditionOther || '', 
+                    row.status,
+                    row.timeReturned || '',
+                    row.conditionAtReturn || '',
+                    row.conditionAtReturnOther || '',
+                    row.supervisor || ''
+                ].join(',')
             )
         ];
         const csvString = csvRows.join('\\n');
@@ -52,6 +66,13 @@ export default function AdminDashboard() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+    };
+    
+    const handleUpdateRequest = (updatedRequest: LaptopRequestWithId) => {
+        setRequests(prevRequests => 
+            prevRequests.map(req => req.id === updatedRequest.id ? updatedRequest : req)
+        );
+        fetchRequests(); // Refresh the list from the server
     };
 
     return (
@@ -74,7 +95,7 @@ export default function AdminDashboard() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                       {loading ? <p>Loading requests...</p> : <RequestsTable requests={requests} />}
+                       {loading ? <p>Loading requests...</p> : <RequestsTable requests={requests} onUpdateRequest={handleUpdateRequest} />}
                     </CardContent>
                 </Card>
             </div>

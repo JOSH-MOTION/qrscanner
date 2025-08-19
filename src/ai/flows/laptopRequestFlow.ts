@@ -7,8 +7,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { LaptopRequestSchema, type LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
-import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { LaptopRequestSchema, type LaptopRequestData, UpdateLaptopRequestSchema, type UpdateLaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
+import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export type { LaptopRequestData };
@@ -20,8 +20,8 @@ const LaptopRequestOutputSchema = z.object({
 
 export type LaptopRequestOutput = z.infer<typeof LaptopRequestOutputSchema>;
 
-export async function submitLaptopRequest(input: LaptopRequestData): Promise<LaptopRequestOutput> {
-  return laptopRequestFlow(input);
+export async function submitLaptopRequest(input: Omit<LaptopRequestData, 'status'>): Promise<LaptopRequestOutput> {
+  return laptopRequestFlow({...input, status: 'Checked Out'});
 }
 
 const laptopRequestFlow = ai.defineFlow(
@@ -58,3 +58,38 @@ export async function getLaptopRequests(): Promise<(LaptopRequestData & { id: st
     const requests = snapshot.docs.map(doc => ({ ...doc.data() as LaptopRequestData, id: doc.id }));
     return requests;
 }
+
+
+export async function updateLaptopReturn(data: UpdateLaptopRequestData): Promise<LaptopRequestOutput> {
+    return updateLaptopReturnFlow(data);
+}
+
+const updateLaptopReturnFlow = ai.defineFlow(
+    {
+        name: 'updateLaptopReturnFlow',
+        inputSchema: UpdateLaptopRequestSchema,
+        outputSchema: LaptopRequestOutputSchema,
+    },
+    async (data) => {
+        try {
+            const requestDocRef = doc(db, 'laptopRequests', data.id);
+            await updateDoc(requestDocRef, {
+                status: 'Returned',
+                timeReturned: data.timeReturned,
+                conditionAtReturn: data.conditionAtReturn,
+                conditionAtReturnOther: data.conditionAtReturnOther,
+                supervisor: data.supervisor,
+            });
+            return {
+                success: true,
+                message: 'Laptop return updated successfully.',
+            };
+        } catch (error: any) {
+            console.error("Error updating document: ", error);
+            return {
+                success: false,
+                message: `Failed to update return: ${error.message}`,
+            };
+        }
+    }
+);
