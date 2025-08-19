@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, LayoutDashboard } from 'lucide-react';
-import { LaptopRequestForm } from '@/components/LaptopRequestForm';
-import { submitLaptopRequest } from '@/ai/flows/laptopRequestFlow';
-import type { LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
-import { useToast } from "@/hooks/use-toast";
-import { Toaster } from "@/components/ui/toaster";
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -50,7 +45,6 @@ export default function QRCodeGenerator() {
   const [fgColor, setFgColor] = useState<string>('#000000');
   const [bgColor, setBgColor] = useState<string>('#ffffff');
   const [qrType, setQrType] = useState<QrCodeType>('website');
-  const { toast } = useToast();
   const router = useRouter();
 
 
@@ -59,9 +53,14 @@ export default function QRCodeGenerator() {
     firstName: '', lastName: '', phone: '', email: '',
     company: '', jobTitle: '', website: '', street: '', city: '', state: '', zip: '', country: ''
   });
-  const [laptopRequestData, setLaptopRequestData] = useState<LaptopRequestData>({
-      studentName: '', generation: '', subject: '', laptopId: '', timeCollected: '', condition: 'Good', conditionOther: ''
-  });
+  
+  // Set the base URL for the laptop request form
+  const [laptopRequestUrl, setLaptopRequestUrl] = useState('');
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setLaptopRequestUrl(`${window.location.origin}/laptop-request`);
+    }
+  }, []);
 
 
   const handleWifiChange = (e: React.ChangeEvent<HTMLInputElement> | string, field: keyof WifiData | 'encryption') => {
@@ -74,14 +73,6 @@ export default function QRCodeGenerator() {
 
   const handleVcardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setVcardData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleLaptopRequestChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, field?: keyof LaptopRequestData) => {
-    if (typeof e === 'string') {
-      setLaptopRequestData(prev => ({ ...prev, condition: e as LaptopRequestData['condition']}));
-    } else {
-      setLaptopRequestData(prev => ({ ...prev, [(e.target as HTMLInputElement).name]: (e.target as HTMLInputElement).value }));
-    }
   };
 
   const handleLogout = async () => {
@@ -111,34 +102,7 @@ ADR;TYPE=WORK:;;${street};${city};${state};${zip};${country}
 END:VCARD`;
       setQrValue(vCardString);
     } else if (qrType === 'laptop') {
-      const { studentName, generation, subject, laptopId, timeCollected, condition, conditionOther } = laptopRequestData;
-      const laptopRequestString = `Codetrain Africa - Laptop Request
-Date: ${new Date().toLocaleDateString()}
-Student Name: ${studentName}
-Generation: ${generation}
-Subject/Lesson: ${subject}
-Laptop ID: ${laptopId}
-Time Collected: ${timeCollected}
-Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
-      setQrValue(laptopRequestString);
-
-      try {
-        const result = await submitLaptopRequest(laptopRequestData);
-        if (result.success) {
-            toast({
-                title: "Success",
-                description: "Laptop request submitted to admin.",
-            });
-        } else {
-            throw new Error(result.message);
-        }
-      } catch (error) {
-          toast({
-              variant: "destructive",
-              title: "Submission Failed",
-              description: "Could not submit laptop request to admin.",
-          });
-      }
+        setQrValue(laptopRequestUrl);
     }
   };
 
@@ -182,9 +146,14 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
             />
           </div>
         );
-    case 'laptop':
+      case 'laptop':
         return (
-           <LaptopRequestForm data={laptopRequestData} onChange={handleLaptopRequestChange} />
+           <div className="space-y-2 text-center">
+            <p className="text-sm text-muted-foreground">
+                This will generate a QR code that directs students to the laptop request form.
+            </p>
+            <Input type="text" value={laptopRequestUrl} readOnly className="text-center bg-gray-100" />
+           </div>
         )
       case 'wifi':
         return (
@@ -303,7 +272,7 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
           case 'vcard':
               return !vcardData.firstName || !vcardData.lastName;
           case 'laptop':
-              return !laptopRequestData.studentName || !laptopRequestData.laptopId;
+              return !laptopRequestUrl;
           default:
               return true;
       }
@@ -311,7 +280,6 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
-       <Toaster />
       <Card className="w-full max-w-md mx-auto shadow-lg relative">
         <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -394,5 +362,3 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
     </div>
   );
 }
-
-    

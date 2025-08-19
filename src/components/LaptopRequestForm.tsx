@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -7,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
 
 interface LaptopRequestFormProps {
-    data: LaptopRequestData;
+    data: Omit<LaptopRequestData, 'status'>;
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, field?: keyof LaptopRequestData) => void;
 }
 
@@ -17,29 +18,29 @@ export function LaptopRequestForm({ data, onChange }: LaptopRequestFormProps) {
     };
 
     return (
-        <div className="space-y-4 max-h-60 overflow-y-auto p-1">
+        <div className="space-y-4 max-h-96 overflow-y-auto p-1">
             <div className="space-y-2">
                 <Label htmlFor="studentName">Student Name</Label>
-                <Input id="studentName" name="studentName" value={data.studentName} onChange={onChange} />
+                <Input id="studentName" name="studentName" value={data.studentName} onChange={onChange} required />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="generation">Generation (Gen)</Label>
-                    <Input id="generation" name="generation" value={data.generation} onChange={onChange} />
+                    <Input id="generation" name="generation" value={data.generation} onChange={onChange} required/>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="subject">Subject/Lesson</Label>
-                    <Input id="subject" name="subject" value={data.subject} onChange={onChange} />
+                    <Input id="subject" name="subject" value={data.subject} onChange={onChange} required/>
                 </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="laptopId">Laptop ID/Number</Label>
-                    <Input id="laptopId" name="laptopId" value={data.laptopId} onChange={onChange} />
+                    <Input id="laptopId" name="laptopId" value={data.laptopId} onChange={onChange} required/>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="timeCollected">Time Collected</Label>
-                    <Input id="timeCollected" name="timeCollected" type="time" value={data.timeCollected} onChange={onChange} />
+                    <Input id="timeCollected" name="timeCollected" type="time" value={data.timeCollected} onChange={onChange} required/>
                 </div>
             </div>
             <div className="space-y-2">
@@ -63,7 +64,7 @@ export function LaptopRequestForm({ data, onChange }: LaptopRequestFormProps) {
                     </div>
                 </RadioGroup>
                 {data.condition === 'Other' && (
-                    <Input name="conditionOther" value={data.conditionOther} onChange={onChange} placeholder="Please specify" className="mt-2" />
+                    <Input name="conditionOther" value={data.conditionOther || ''} onChange={onChange} placeholder="Please specify" className="mt-2" />
                 )}
             </div>
         </div>
