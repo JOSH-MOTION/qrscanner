@@ -12,6 +12,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
 import { UpdateReturnDialog } from './UpdateReturnDialog';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion"
+
 
 type LaptopRequestWithId = LaptopRequestData & { id: string };
 
@@ -50,10 +57,7 @@ export function RequestsTable({ requests, onUpdateRequest }: RequestsTableProps)
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Student Name</TableHead>
-                        <TableHead>Laptop ID</TableHead>
-                        <TableHead>Time Collected</TableHead>
-                        <TableHead>Condition</TableHead>
+                        <TableHead>Student Details</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -62,15 +66,43 @@ export function RequestsTable({ requests, onUpdateRequest }: RequestsTableProps)
                     {requests.length > 0 ? (
                         requests.map((request) => (
                             <TableRow key={request.id}>
-                                <TableCell className="font-medium">{request.studentName}</TableCell>
-                                <TableCell>{request.laptopId}</TableCell>
-                                <TableCell>{request.timeCollected}</TableCell>
                                 <TableCell>
-                                    {getConditionBadge(request.condition)}
-                                    {request.condition === 'Other' && (
-                                        <p className="text-xs text-muted-foreground mt-1">{request.conditionOther}</p>
-                                    )}
+                                    <Accordion type="single" collapsible>
+                                        <AccordionItem value={request.id} className="border-none">
+                                            <AccordionTrigger className="font-medium p-0">
+                                                {request.dynamicFields?.studentName || 'N/A'}
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2 text-sm">
+                                                    {Object.entries(request.dynamicFields || {}).map(([key, value]) => (
+                                                        <div key={key}>
+                                                            <span className="font-semibold capitalize">{key.replace(/([A-Z])/g, ' $1')}: </span>{value}
+                                                        </div>
+                                                    ))}
+                                                     <div>
+                                                        <span className="font-semibold">Condition: </span> {getConditionBadge(request.condition)}
+                                                        {request.condition === 'Other' && (
+                                                            <span className="text-xs text-muted-foreground ml-2">{request.conditionOther}</span>
+                                                        )}
+                                                     </div>
+                                                     {request.status === 'Returned' && (
+                                                         <>
+                                                            <div><span className="font-semibold">Time Returned: </span>{request.timeReturned}</div>
+                                                             <div>
+                                                                <span className="font-semibold">Condition at Return: </span> {getConditionBadge(request.conditionAtReturn)}
+                                                                {request.conditionAtReturn === 'Other' && (
+                                                                    <span className="text-xs text-muted-foreground ml-2">{request.conditionAtReturnOther}</span>
+                                                                )}
+                                                             </div>
+                                                            <div><span className="font-semibold">Supervisor: </span>{request.supervisor}</div>
+                                                         </>
+                                                     )}
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    </Accordion>
                                 </TableCell>
+                                
                                 <TableCell>{getStatusBadge(request.status)}</TableCell>
                                 <TableCell className="text-right">
                                     {request.status === 'Checked Out' && (
@@ -81,7 +113,7 @@ export function RequestsTable({ requests, onUpdateRequest }: RequestsTableProps)
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">
+                            <TableCell colSpan={3} className="h-24 text-center">
                                 No requests found.
                             </TableCell>
                         </TableRow>

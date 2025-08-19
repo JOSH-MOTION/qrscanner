@@ -7,8 +7,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { LaptopRequestSchema, type LaptopRequestData, UpdateLaptopRequestSchema, type UpdateLaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
-import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { LaptopRequestSchema, type LaptopRequestData, UpdateLaptopRequestSchema, type UpdateLaptopRequestData, FormFieldSchema, FormStructureSchema, type FormStructureData } from '@/ai/schemas/laptopRequestSchema';
+import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export type { LaptopRequestData };
@@ -93,3 +93,52 @@ const updateLaptopReturnFlow = ai.defineFlow(
         }
     }
 );
+
+const FormStructureOutputSchema = z.object({
+    success: z.boolean(),
+    message: z.string(),
+});
+
+export async function saveFormStructure(structure: FormStructureData): Promise<{ success: boolean; message: string }> {
+    return saveFormStructureFlow(structure);
+}
+
+const saveFormStructureFlow = ai.defineFlow({
+    name: 'saveFormStructureFlow',
+    inputSchema: FormStructureSchema,
+    outputSchema: FormStructureOutputSchema,
+}, async (structure) => {
+    try {
+        const formDocRef = doc(db, 'formStructures', 'laptopRequest');
+        await setDoc(formDocRef, structure);
+        return { success: true, message: 'Form structure saved successfully.' };
+    } catch (error: any) {
+        console.error("Error saving form structure: ", error);
+        return { success: false, message: `Failed to save form structure: ${error.message}` };
+    }
+});
+
+
+export async function getFormStructure(): Promise<FormStructureData | null> {
+    const formDocRef = doc(db, 'formStructures', 'laptopRequest');
+    const docSnap = await getDoc(formDocRef);
+    if (docSnap.exists()) {
+        return docSnap.data() as FormStructureData;
+    } else {
+        // Return a default structure if it doesn't exist
+        return {
+             fields: [
+                { id: 'studentName', label: 'Student Name', type: 'text', required: true },
+                { id: 'generation', label: 'Generation (Gen)', type: 'text', required: true },
+                { id: 'subject', label: 'Subject/Lesson', type: 'text', required: true },
+                { id: 'laptopId', label: 'Laptop ID/Number', type: 'text', required: true },
+                { id: 'timeCollected', label: 'Time Collected', type: 'time', required: true },
+            ],
+            conditionField: {
+                enabled: true,
+                label: 'Condition at Collection',
+                options: ['Good', 'Fair', 'Other'],
+            },
+        };
+    }
+}

@@ -8,11 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, LayoutDashboard } from 'lucide-react';
+import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, LayoutDashboard, Trash2, Plus, Save } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import type { FormFieldData, FormStructureData } from '@/ai/schemas/laptopRequestSchema';
+import { getFormStructure, saveFormStructure } from '@/ai/flows/laptopRequestFlow';
+import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
 
 
 type QrCodeType = 'website' | 'text' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'laptop';
@@ -46,6 +50,7 @@ export default function QRCodeGenerator() {
   const [bgColor, setBgColor] = useState<string>('#ffffff');
   const [qrType, setQrType] = useState<QrCodeType>('website');
   const router = useRouter();
+  const { toast } = useToast();
 
 
   const [wifiData, setWifiData] = useState<WifiData>({ ssid: '', encryption: 'WPA', password: '' });
@@ -54,13 +59,31 @@ export default function QRCodeGenerator() {
     company: '', jobTitle: '', website: '', street: '', city: '', state: '', zip: '', country: ''
   });
   
+  // State for dynamic form builder
+  const [formStructure, setFormStructure] = useState<FormStructureData | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   // Set the base URL for the laptop request form
   const [laptopRequestUrl, setLaptopRequestUrl] = useState('');
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setLaptopRequestUrl(`${window.location.origin}/laptop-request`);
+      const url = `${window.location.origin}/laptop-request`;
+      setLaptopRequestUrl(url);
+      if (qrType === 'laptop') {
+        setQrValue(url);
+      }
     }
-  }, []);
+  }, [qrType]);
+  
+  useEffect(() => {
+    async function fetchStructure() {
+        if (qrType === 'laptop') {
+            const structure = await getFormStructure();
+            setFormStructure(structure);
+        }
+    }
+    fetchStructure();
+  }, [qrType]);
 
 
   const handleWifiChange = (e: React.ChangeEvent<HTMLInputElement> | string, field: keyof WifiData | 'encryption') => {
@@ -80,6 +103,44 @@ export default function QRCodeGenerator() {
     router.push('/login');
   };
 
+  // Dynamic form functions
+  const handleFieldChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!formStructure) return;
+    const newFields = [...formStructure.fields];
+    newFields[index].label = e.target.value;
+    setFormStructure({ ...formStructure, fields: newFields });
+  };
+    
+  const handleRequiredChange = (index: number, checked: boolean) => {
+    if (!formStructure) return;
+    const newFields = [...formStructure.fields];
+    newFields[index].required = checked;
+    setFormStructure({ ...formStructure, fields: newFields });
+  };
+
+  const addField = () => {
+    if (!formStructure) return;
+    const newField: FormFieldData = { id: `custom_${Date.now()}`, label: '', type: 'text', required: false };
+    setFormStructure({ ...formStructure, fields: [...formStructure.fields, newField] });
+  };
+
+  const removeField = (index: number) => {
+    if (!formStructure) return;
+    const newFields = formStructure.fields.filter((_, i) => i !== index);
+    setFormStructure({ ...formStructure, fields: newFields });
+  };
+    
+  const handleSaveFormStructure = async () => {
+    if (!formStructure) return;
+    setIsSaving(true);
+    const result = await saveFormStructure(formStructure);
+    if (result.success) {
+      toast({ title: 'Success', description: 'Form structure saved successfully.' });
+    } else {
+      toast({ variant: 'destructive', title: 'Error', description: result.message });
+    }
+    setIsSaving(false);
+  };
 
   const generateQRCode = async () => {
     if (qrType === 'website') {
@@ -163,11 +224,39 @@ END:VCARD`;
         );
       case 'laptop':
         return (
-           <div className="space-y-2 text-center">
-            <p className="text-sm text-muted-foreground">
-                This will generate a QR code that directs students to the laptop request form.
-            </p>
-            <Input type="text" value={laptopRequestUrl} readOnly className="text-center bg-gray-100" />
+           <div className="w-full space-y-4">
+                <div className="space-y-2 text-center">
+                    <p className="text-sm text-muted-foreground">
+                        This will generate a QR code that directs students to the laptop request form.
+                        Customize the fields below.
+                    </p>
+                    <Input type="text" value={laptopRequestUrl} readOnly className="text-center bg-gray-100" />
+                </div>
+                <div className="space-y-4 rounded-md border p-4 max-h-60 overflow-y-auto">
+                    <h4 className="text-sm font-medium">Form Fields</h4>
+                    {formStructure?.fields.map((field, index) => (
+                        <div key={field.id} className="flex items-center gap-2">
+                            <Input 
+                                value={field.label} 
+                                onChange={(e) => handleFieldChange(index, e)} 
+                                placeholder="Field Label"
+                            />
+                            <div className="flex items-center gap-1.5">
+                                <Label htmlFor={`required-${index}`} className="text-xs">Required</Label>
+                                <Switch id={`required-${index}`} checked={field.required} onCheckedChange={(checked) => handleRequiredChange(index, checked)} />
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => removeField(index)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
+                    <Button variant="outline" size="sm" onClick={addField} className="w-full">
+                        <Plus className="mr-2 h-4 w-4" /> Add Field
+                    </Button>
+                </div>
+                <Button onClick={handleSaveFormStructure} disabled={isSaving} className="w-full">
+                    <Save className="mr-2 h-4 w-4" /> {isSaving ? 'Saving...' : 'Save Form Structure'}
+                </Button>
            </div>
         )
       case 'wifi':

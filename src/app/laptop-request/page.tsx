@@ -1,41 +1,58 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LaptopRequestForm } from '@/components/LaptopRequestForm';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { submitLaptopRequest } from '@/ai/flows/laptopRequestFlow';
-import type { LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
+import { getFormStructure } from '@/ai/flows/laptopRequestFlow';
+import type { FormStructureData } from '@/ai/schemas/laptopRequestSchema';
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LaptopRequestPage() {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
-    
-    const [laptopRequestData, setLaptopRequestData] = useState<Omit<LaptopRequestData, 'status'>>({
-        studentName: '',
-        generation: '',
-        subject: '',
-        laptopId: '',
-        timeCollected: '',
-        condition: 'Good',
-        conditionOther: '',
-    });
+    const [formStructure, setFormStructure] = useState<FormStructureData | null>(null);
+    const [formData, setFormData] = useState<Record<string, string>>({});
+    const [condition, setCondition] = useState('Good');
+    const [conditionOther, setConditionOther] = useState('');
 
-    const handleLaptopRequestChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, field?: keyof LaptopRequestData) => {
-        if (typeof e === 'string') {
-            setLaptopRequestData(prev => ({ ...prev, condition: e as LaptopRequestData['condition'] }));
-        } else {
-            const { name, value } = e.target as HTMLInputElement;
-            setLaptopRequestData(prev => ({ ...prev, [name]: value }));
-        }
+
+    useEffect(() => {
+        const fetchStructure = async () => {
+            const structure = await getFormStructure();
+            setFormStructure(structure);
+            if (structure) {
+                const initialData: Record<string, string> = {};
+                structure.fields.forEach(field => {
+                    initialData[field.id] = '';
+                });
+                setFormData(initialData);
+            }
+        };
+        fetchStructure();
+    }, []);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
     
     const isFormValid = () => {
-        return laptopRequestData.studentName && laptopRequestData.generation && laptopRequestData.subject && laptopRequestData.laptopId && laptopRequestData.timeCollected;
+        if (!formStructure) return false;
+
+        for (const field of formStructure.fields) {
+            if (field.required && !formData[field.id]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -51,7 +68,11 @@ export default function LaptopRequestPage() {
 
         setIsSubmitting(true);
         try {
-            const result = await submitLaptopRequest(laptopRequestData);
+            const result = await submitLaptopRequest({
+                dynamicFields: formData,
+                condition: condition as 'Good' | 'Fair' | 'Other',
+                conditionOther: conditionOther,
+            });
             if (result.success) {
                 toast({
                     title: "Success",
@@ -97,7 +118,54 @@ export default function LaptopRequestPage() {
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
                     <CardContent>
-                        <LaptopRequestForm data={laptopRequestData as LaptopRequestData} onChange={handleLaptopRequestChange} />
+                        <div className="space-y-4 max-h-96 overflow-y-auto p-1">
+                            {!formStructure ? (
+                                <div className="space-y-4">
+                                    <Skeleton className="h-8 w-1/3" />
+                                    <Skeleton className="h-10 w-full" />
+                                    <Skeleton className="h-8 w-1/3" />
+                                    <Skeleton className="h-10 w-full" />
+                                    <Skeleton className="h-8 w-1/3" />
+                                    <Skeleton className="h-10 w-full" />
+                                </div>
+                            ) : (
+                                <>
+                                    {formStructure.fields.map(field => (
+                                        <div key={field.id} className="space-y-2">
+                                            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+                                            <Input
+                                                id={field.id}
+                                                name={field.id}
+                                                type={field.type}
+                                                value={formData[field.id] || ''}
+                                                onChange={handleChange}
+                                                required={field.required}
+                                            />
+                                        </div>
+                                    ))}
+                                    {formStructure.conditionField.enabled && (
+                                         <div className="space-y-2">
+                                            <Label>{formStructure.conditionField.label}</Label>
+                                            <RadioGroup
+                                                value={condition}
+                                                onValueChange={setCondition}
+                                                className="flex gap-4"
+                                            >
+                                                {formStructure.conditionField.options.map(opt => (
+                                                    <div key={opt} className="flex items-center space-x-2">
+                                                        <RadioGroupItem value={opt} id={`c-${opt.toLowerCase()}`} />
+                                                        <Label htmlFor={`c-${opt.toLowerCase()}`}>{opt}</Label>
+                                                    </div>
+                                                ))}
+                                            </RadioGroup>
+                                            {condition === 'Other' && (
+                                                <Input name="conditionOther" value={conditionOther} onChange={(e) => setConditionOther(e.target.value)} placeholder="Please specify" className="mt-2" />
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
                         <div className="mt-6 space-y-2 text-sm text-muted-foreground">
                             <p className="font-bold">Student Agreement</p>
                             <p>I agree to take care of the Codetrain Africa laptop while using it and return it immediately after class.</p>
