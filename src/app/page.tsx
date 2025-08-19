@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact } from 'lucide-react';
+import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Type } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
-type QrCodeType = 'website' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard';
+type QrCodeType = 'website' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'form';
 
 type WifiData = {
   ssid: string;
@@ -39,6 +40,7 @@ export default function QRCodeGenerator() {
   const [fgColor, setFgColor] = useState<string>('#000000');
   const [bgColor, setBgColor] = useState<string>('#ffffff');
   const [qrType, setQrType] = useState<QrCodeType>('website');
+  const [formData, setFormData] = useState<string>('');
 
   const [wifiData, setWifiData] = useState<WifiData>({ ssid: '', encryption: 'WPA', password: '' });
   const [vcardData, setVcardData] = useState<VCardData>({
@@ -78,6 +80,8 @@ URL:${website}
 ADR;TYPE=WORK:;;${street};${city};${state};${zip};${country}
 END:VCARD`;
       setQrValue(vCardString);
+    } else if (qrType === 'form') {
+      setQrValue(formData);
     }
   };
 
@@ -118,6 +122,19 @@ END:VCARD`;
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="e.g. https://example.com"
+            />
+          </div>
+        );
+      case 'form':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="form-input">Enter form data</Label>
+            <Textarea
+              id="form-input"
+              value={formData}
+              onChange={(e) => setFormData(e.target.value)}
+              placeholder="Enter your form data here..."
+              rows={8}
             />
           </div>
         );
@@ -219,6 +236,7 @@ END:VCARD`;
 
   const qrOptions: { value: QrCodeType; label: string; icon: React.ElementType }[] = [
     { value: 'website', label: 'Website', icon: Globe },
+    { value: 'form', label: 'Form', icon: FileText },
     { value: 'pdf', label: 'PDF', icon: FileText },
     { value: 'images', label: 'Images', icon: ImageIcon },
     { value: 'video', label: 'Video', icon: Video },
@@ -236,6 +254,8 @@ END:VCARD`;
               return !wifiData.ssid;
           case 'vcard':
               return !vcardData.firstName || !vcardData.lastName;
+          case 'form':
+              return !formData;
           default:
               return true;
       }
@@ -315,5 +335,3 @@ END:VCARD`;
     </div>
   );
 }
-
-    
