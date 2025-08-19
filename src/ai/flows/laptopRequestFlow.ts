@@ -8,6 +8,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { LaptopRequestSchema, type LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
+import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export type { LaptopRequestData };
 
@@ -29,12 +31,30 @@ const laptopRequestFlow = ai.defineFlow(
     outputSchema: LaptopRequestOutputSchema,
   },
   async (input) => {
-    console.log('Received laptop request:', input);
-    // In a real application, you would save this data to a database (e.g., Firestore).
-    // For now, we just simulate a successful submission.
-    return {
-      success: true,
-      message: 'Laptop request submitted successfully.',
-    };
+    try {
+        await addDoc(collection(db, 'laptopRequests'), {
+            ...input,
+            createdAt: new Date(),
+        });
+        return {
+            success: true,
+            message: 'Laptop request submitted successfully.',
+        };
+    } catch (error: any) {
+        console.error("Error adding document: ", error);
+        return {
+            success: false,
+            message: `Failed to submit request: ${error.message}`,
+        };
+    }
   }
 );
+
+
+export async function getLaptopRequests(): Promise<(LaptopRequestData & { id: string })[]> {
+    const requestsCol = collection(db, 'laptopRequests');
+    const q = query(requestsCol, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    const requests = snapshot.docs.map(doc => ({ ...doc.data() as LaptopRequestData, id: doc.id }));
+    return requests;
+}
