@@ -9,7 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { LaptopRequestForm } from '@/components/LaptopRequestForm';
+import { submitLaptopRequest } from '@/ai/flows/laptopRequestFlow';
+import type { LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+
 
 type QrCodeType = 'website' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'laptop';
 
@@ -34,15 +39,6 @@ type VCardData = {
   country: string;
 };
 
-type LaptopRequestData = {
-    studentName: string;
-    generation: string;
-    subject: string;
-    laptopId: string;
-    timeCollected: string;
-    condition: 'Good' | 'Fair' | 'Other';
-    conditionOther: string;
-}
 
 export default function QRCodeGenerator() {
   const [inputValue, setInputValue] = useState<string>('https://firebase.google.com');
@@ -50,6 +46,7 @@ export default function QRCodeGenerator() {
   const [fgColor, setFgColor] = useState<string>('#000000');
   const [bgColor, setBgColor] = useState<string>('#ffffff');
   const [qrType, setQrType] = useState<QrCodeType>('website');
+  const { toast } = useToast();
 
   const [wifiData, setWifiData] = useState<WifiData>({ ssid: '', encryption: 'WPA', password: '' });
   const [vcardData, setVcardData] = useState<VCardData>({
@@ -77,12 +74,12 @@ export default function QRCodeGenerator() {
     if (typeof e === 'string') {
       setLaptopRequestData(prev => ({ ...prev, condition: e as LaptopRequestData['condition']}));
     } else {
-      setLaptopRequestData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+      setLaptopRequestData(prev => ({ ...prev, [(e.target as HTMLInputElement).name]: (e.target as HTMLInputElement).value }));
     }
   };
 
 
-  const generateQRCode = () => {
+  const generateQRCode = async () => {
     if (qrType === 'website') {
       setQrValue(inputValue);
     } else if (qrType === 'wifi') {
@@ -113,6 +110,24 @@ Laptop ID: ${laptopId}
 Time Collected: ${timeCollected}
 Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
       setQrValue(laptopRequestString);
+
+      try {
+        const result = await submitLaptopRequest(laptopRequestData);
+        if (result.success) {
+            toast({
+                title: "Success",
+                description: "Laptop request submitted to admin.",
+            });
+        } else {
+            throw new Error(result.message);
+        }
+      } catch (error) {
+          toast({
+              variant: "destructive",
+              title: "Submission Failed",
+              description: "Could not submit laptop request to admin.",
+          });
+      }
     }
   };
 
@@ -158,63 +173,14 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
         );
     case 'laptop':
         return (
-            <div className="space-y-4 max-h-60 overflow-y-auto p-1">
-                 <div className="space-y-2">
-                    <Label htmlFor="studentName">Student Name</Label>
-                    <Input id="studentName" name="studentName" value={laptopRequestData.studentName} onChange={handleLaptopRequestChange} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="generation">Generation (Gen)</Label>
-                        <Input id="generation" name="generation" value={laptopRequestData.generation} onChange={handleLaptopRequestChange} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="subject">Subject/Lesson</Label>
-                        <Input id="subject" name="subject" value={laptopRequestData.subject} onChange={handleLaptopRequestChange} />
-                    </div>
-                </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="laptopId">Laptop ID/Number</Label>
-                        <Input id="laptopId" name="laptopId" value={laptopRequestData.laptopId} onChange={handleLaptopRequestChange} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="timeCollected">Time Collected</Label>
-                        <Input id="timeCollected" name="timeCollected" type="time" value={laptopRequestData.timeCollected} onChange={handleLaptopRequestChange} />
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <Label>Condition at Collection</Label>
-                    <RadioGroup
-                        value={laptopRequestData.condition}
-                        onValueChange={(value) => handleLaptopRequestChange(value, 'condition')}
-                        className="flex gap-4"
-                    >
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Good" id="c-good" />
-                            <Label htmlFor="c-good">Good</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Fair" id="c-fair" />
-                            <Label htmlFor="c-fair">Fair</Label>
-                        </div>
-                         <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="Other" id="c-other" />
-                            <Label htmlFor="c-other">Other</Label>
-                        </div>
-                    </RadioGroup>
-                    {laptopRequestData.condition === 'Other' && (
-                        <Input name="conditionOther" value={laptopRequestData.conditionOther} onChange={handleLaptopRequestChange} placeholder="Please specify" className="mt-2" />
-                    )}
-                </div>
-            </div>
+           <LaptopRequestForm data={laptopRequestData} onChange={handleLaptopRequestChange} />
         )
       case 'wifi':
         return (
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="ssid">Network Name (SSID)</Label>
-              <Input id="ssid" name="ssid" value={wifiData.ssid} onChange={handleWifiChange} placeholder="e.g. MyHomeWiFi" />
+              <Input id="ssid" name="ssid" value={wifiData.ssid} onChange={(e) => handleWifiChange(e, 'ssid')} placeholder="e.g. MyHomeWiFi" />
             </div>
             <div className="space-y-2">
               <Label>Encryption</Label>
@@ -232,7 +198,7 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
             {wifiData.encryption !== 'nopass' && (
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" value={wifiData.password || ''} onChange={handleWifiChange} />
+                <Input id="password" name="password" type="password" value={wifiData.password || ''} onChange={(e) => handleWifiChange(e, 'password')} />
               </div>
             )}
           </div>
@@ -334,6 +300,7 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+       <Toaster />
       <Card className="w-full max-w-md mx-auto shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center justify-center gap-2">
@@ -406,5 +373,3 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
     </div>
   );
 }
-
-    
