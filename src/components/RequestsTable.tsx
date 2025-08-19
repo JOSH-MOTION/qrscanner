@@ -51,6 +51,10 @@ export function RequestsTable({ requests, onUpdateRequest }: RequestsTableProps)
                 return <Badge>{status}</Badge>;
         }
     }
+
+    const formatLabel = (label: string) => {
+        return label.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+    }
     
     return (
         <div className="rounded-md border">
@@ -70,13 +74,13 @@ export function RequestsTable({ requests, onUpdateRequest }: RequestsTableProps)
                                     <Accordion type="single" collapsible>
                                         <AccordionItem value={request.id} className="border-none">
                                             <AccordionTrigger className="font-medium p-0">
-                                                {request.dynamicFields?.studentName || 'N/A'}
+                                                {request.dynamicFields?.studentName || request.dynamicFields?.name || 'N/A'}
                                             </AccordionTrigger>
                                             <AccordionContent>
                                                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2 text-sm">
                                                     {Object.entries(request.dynamicFields || {}).map(([key, value]) => (
                                                         <div key={key}>
-                                                            <span className="font-semibold capitalize">{key.replace(/([A-Z])/g, ' $1')}: </span>{value}
+                                                            <span className="font-semibold">{formatLabel(key)}: </span>{value as string}
                                                         </div>
                                                     ))}
                                                      <div>

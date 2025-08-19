@@ -107,7 +107,7 @@ export default function QRCodeGenerator() {
   const handleFieldChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     if (!formStructure) return;
     const newFields = [...formStructure.fields];
-    newFields[index].label = e.target.value;
+    newFields[index] = { ...newFields[index], [e.target.name]: e.target.value };
     setFormStructure({ ...formStructure, fields: newFields });
   };
     
@@ -121,7 +121,7 @@ export default function QRCodeGenerator() {
   const addField = () => {
     if (!formStructure) return;
     const newField: FormFieldData = { id: `custom_${Date.now()}`, label: '', type: 'text', required: false };
-    setFormStructure({ ...formStructure, fields: [...formStructure.fields, newField] });
+    setFormStructure(prev => prev ? ({ ...prev, fields: [...prev.fields, newField] }) : null);
   };
 
   const removeField = (index: number) => {
@@ -237,6 +237,7 @@ END:VCARD`;
                     {formStructure?.fields.map((field, index) => (
                         <div key={field.id} className="flex items-center gap-2">
                             <Input 
+                                name="label"
                                 value={field.label} 
                                 onChange={(e) => handleFieldChange(index, e)} 
                                 placeholder="Field Label"
@@ -469,5 +470,3 @@ END:VCARD`;
     </div>
   );
 }
-
-    
