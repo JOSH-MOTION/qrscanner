@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 
-type QrCodeType = 'website' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'laptop';
+type QrCodeType = 'website' | 'text' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'laptop';
 
 type WifiData = {
   ssid: string;
@@ -84,6 +84,8 @@ export default function QRCodeGenerator() {
   const generateQRCode = async () => {
     if (qrType === 'website') {
       setQrValue(inputValue);
+    } else if (qrType === 'text') {
+      setQrValue(inputValue);
     } else if (qrType === 'wifi') {
       const { ssid, encryption, password } = wifiData;
       setQrValue(`WIFI:T:${encryption};S:${ssid};${encryption !== 'nopass' ? `P:${password};` : ''};`);
@@ -143,6 +145,19 @@ END:VCARD`;
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="e.g. https://example.com"
+            />
+          </div>
+        );
+      case 'text':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="qr-input">Enter Text</Label>
+            <Input
+              id="qr-input"
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Enter any text or link"
             />
           </div>
         );
@@ -253,6 +268,7 @@ END:VCARD`;
 
   const qrOptions: { value: QrCodeType; label: string; icon: React.ElementType }[] = [
     { value: 'website', label: 'Website', icon: Globe },
+    { value: 'text', label: 'Text', icon: FileText },
     { value: 'laptop', label: 'Laptop Request', icon: Laptop },
     { value: 'pdf', label: 'PDF', icon: FileText },
     { value: 'images', label: 'Images', icon: ImageIcon },
@@ -266,6 +282,8 @@ END:VCARD`;
   const isGenerateDisabled = () => {
       switch(qrType) {
           case 'website':
+              return !inputValue;
+          case 'text':
               return !inputValue;
           case 'wifi':
               return !wifiData.ssid;
@@ -362,3 +380,5 @@ END:VCARD`;
     </div>
   );
 }
+
+    
