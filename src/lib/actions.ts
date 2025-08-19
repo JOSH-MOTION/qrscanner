@@ -1,10 +1,9 @@
 'use server';
 
 import { z } from 'zod';
-import { LaptopRequestSchema, type LaptopRequestData, UpdateLaptopRequestSchema, type UpdateLaptopRequestData, FormFieldSchema, FormStructureSchema, type FormStructureData } from '@/lib/schemas';
-import { collection, addDoc, getDocs, query, orderBy, doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-
+import { type LaptopRequestData, type FormStructureData } from '@/lib/schemas';
+import { dbAdmin } from '@/lib/firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export type { LaptopRequestData };
 
@@ -16,12 +15,13 @@ const LaptopRequestOutputSchema = z.object({
 export type LaptopRequestOutput = z.infer<typeof LaptopRequestOutputSchema>;
 
 export async function submitLaptopRequest(input: Omit<LaptopRequestData, 'status'>): Promise<LaptopRequestOutput> {
-  const dataToSave = {...input, status: 'Checked Out'};
+  const dataToSave = {
+    ...input, 
+    status: 'Checked Out',
+    createdAt: Timestamp.now(),
+  };
   try {
-      await addDoc(collection(db, 'laptopRequests'), {
-          ...dataToSave,
-          createdAt: new Date(),
-      });
+      await dbAdmin.collection('laptopRequests').add(dataToSave);
       return {
           success: true,
           message: 'Laptop request submitted successfully.',
@@ -37,18 +37,24 @@ export async function submitLaptopRequest(input: Omit<LaptopRequestData, 'status
 
 
 export async function getLaptopRequests(): Promise<(LaptopRequestData & { id: string })[]> {
-    const requestsCol = collection(db, 'laptopRequests');
-    const q = query(requestsCol, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    const requests = snapshot.docs.map(doc => ({ ...(doc.data() as LaptopRequestData), id: doc.id }));
+    const snapshot = await dbAdmin.collection('laptopRequests').orderBy('createdAt', 'desc').get();
+    const requests = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return { 
+            ...(data as LaptopRequestData), 
+            id: doc.id,
+            // Firestore Timestamps need to be converted to a serializable format.
+            // For this app, we don't need to display it, so we can omit it or stringify.
+        };
+    });
     return requests;
 }
 
 
-export async function updateLaptopReturn(data: UpdateLaptopRequestData): Promise<LaptopRequestOutput> {
+export async function updateLaptopReturn(data: any): Promise<LaptopRequestOutput> {
     try {
-        const requestDocRef = doc(db, 'laptopRequests', data.id);
-        await updateDoc(requestDocRef, {
+        const requestDocRef = dbAdmin.collection('laptopRequests').doc(data.id);
+        await requestDocRef.update({
             status: 'Returned',
             timeReturned: data.timeReturned,
             conditionAtReturn: data.conditionAtReturn,
@@ -68,15 +74,10 @@ export async function updateLaptopReturn(data: UpdateLaptopRequestData): Promise
     }
 }
 
-const FormStructureOutputSchema = z.object({
-    success: z.boolean(),
-    message: z.string(),
-});
-
 export async function saveFormStructure(structure: FormStructureData): Promise<{ success: boolean; message: string }> {
     try {
-        const formDocRef = doc(db, 'formStructures', 'laptopRequest');
-        await setDoc(formDocRef, structure);
+        const formDocRef = dbAdmin.collection('formStructures').doc('laptopRequest');
+        await formDocRef.set(structure);
         return { success: true, message: 'Form structure saved successfully.' };
     } catch (error: any) {
         console.error("Error saving form structure: ", error);
@@ -86,9 +87,10 @@ export async function saveFormStructure(structure: FormStructureData): Promise<{
 
 
 export async function getFormStructure(): Promise<FormStructureData | null> {
-    const formDocRef = doc(db, 'formStructures', 'laptopRequest');
-    const docSnap = await getDoc(formDocRef);
-    if (docSnap.exists()) {
+    const formDocRef = dbAdmin.collection('formStructures').doc('laptopRequest');
+    const docSnap = await formDocRef.get();
+
+    if (docSnap.exists) {
         return docSnap.data() as FormStructureData;
     } else {
         // Return a default structure if it doesn't exist
