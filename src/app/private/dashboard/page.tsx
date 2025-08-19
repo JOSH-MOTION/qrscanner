@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { RequestsTable } from '@/components/RequestsTable';
 import { Download } from 'lucide-react';
 import Link from 'next/link';
-import { getLaptopRequests } from '@/ai/flows/laptopRequestFlow';
-import type { LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
+import { getLaptopRequests } from '@/lib/actions';
+import type { LaptopRequestData } from '@/lib/schemas';
 
 type LaptopRequestWithId = LaptopRequestData & { id: string };
 
@@ -41,11 +41,11 @@ export default function AdminDashboard() {
             ...requests.map(row => 
                 [
                     row.id, 
-                    row.studentName, 
-                    row.generation, 
-                    row.subject, 
-                    row.laptopId, 
-                    row.timeCollected, 
+                    row.dynamicFields?.studentName || '', 
+                    row.dynamicFields?.generation || '', 
+                    row.dynamicFields?.subject || '', 
+                    row.dynamicFields?.laptopId || '', 
+                    row.dynamicFields?.timeCollected || '', 
                     row.condition, 
                     row.conditionOther || '', 
                     row.status,

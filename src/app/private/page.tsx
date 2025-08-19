@@ -13,8 +13,8 @@ import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { FormFieldData, FormStructureData } from '@/ai/schemas/laptopRequestSchema';
-import { getFormStructure, saveFormStructure } from '@/ai/flows/laptopRequestFlow';
+import type { FormFieldData, FormStructureData } from '@/lib/schemas';
+import { getFormStructure, saveFormStructure } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 

@@ -5,7 +5,7 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import type { LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
+import type { LaptopRequestData } from '@/lib/schemas';
 
 interface LaptopRequestFormProps {
     data: Omit<LaptopRequestData, 'status'>;
@@ -21,26 +21,26 @@ export function LaptopRequestForm({ data, onChange }: LaptopRequestFormProps) {
         <div className="space-y-4 max-h-96 overflow-y-auto p-1">
             <div className="space-y-2">
                 <Label htmlFor="studentName">Student Name</Label>
-                <Input id="studentName" name="studentName" value={data.studentName} onChange={onChange} required />
+                <Input id="studentName" name="studentName" value={data.studentName || ''} onChange={onChange} required />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="generation">Generation (Gen)</Label>
-                    <Input id="generation" name="generation" value={data.generation} onChange={onChange} required/>
+                    <Input id="generation" name="generation" value={data.generation || ''} onChange={onChange} required/>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="subject">Subject/Lesson</Label>
-                    <Input id="subject" name="subject" value={data.subject} onChange={onChange} required/>
+                    <Input id="subject" name="subject" value={data.subject || ''} onChange={onChange} required/>
                 </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="laptopId">Laptop ID/Number</Label>
-                    <Input id="laptopId" name="laptopId" value={data.laptopId} onChange={onChange} required/>
+                    <Input id="laptopId" name="laptopId" value={data.laptopId || ''} onChange={onChange} required/>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="timeCollected">Time Collected</Label>
-                    <Input id="timeCollected" name="timeCollected" type="time" value={data.timeCollected} onChange={onChange} required/>
+                    <Input id="timeCollected" name="timeCollected" type="time" value={data.timeCollected || ''} onChange={onChange} required/>
                 </div>
             </div>
             <div className="space-y-2">

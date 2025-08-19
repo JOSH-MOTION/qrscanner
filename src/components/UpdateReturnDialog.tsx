@@ -16,8 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from "@/hooks/use-toast";
-import type { LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
-import { updateLaptopReturn } from '@/ai/flows/laptopRequestFlow';
+import type { LaptopRequestData } from '@/lib/schemas';
+import { updateLaptopReturn } from '@/lib/actions';
 
 interface UpdateReturnDialogProps {
     request: LaptopRequestData & { id: string };
@@ -55,7 +55,7 @@ export function UpdateReturnDialog({ request, onUpdateRequest }: UpdateReturnDia
                 title: "Success",
                 description: "Laptop return has been recorded.",
             });
-            onUpdateRequest({ ...request, status: 'Returned' });
+            onUpdateRequest({ ...request, status: 'Returned', timeReturned, conditionAtReturn, conditionAtReturnOther, supervisor });
             setOpen(false);
         } else {
             toast({
@@ -75,7 +75,7 @@ export function UpdateReturnDialog({ request, onUpdateRequest }: UpdateReturnDia
                 <DialogHeader>
                     <DialogTitle>Update Laptop Return</DialogTitle>
                     <DialogDescription>
-                        Record the details of the laptop being returned by {request.studentName}.
+                        Record the details of the laptop being returned by {request.dynamicFields?.studentName}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
