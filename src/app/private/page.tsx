@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut } from 'lucide-react';
+import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, LayoutDashboard } from 'lucide-react';
 import { LaptopRequestForm } from '@/components/LaptopRequestForm';
 import { submitLaptopRequest } from '@/ai/flows/laptopRequestFlow';
 import type { LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
@@ -17,6 +17,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 
 type QrCodeType = 'website' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'laptop';
@@ -312,14 +313,21 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
        <Toaster />
       <Card className="w-full max-w-md mx-auto shadow-lg relative">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-center gap-2">
-            <QrCode className="w-6 h-6" />
-            <span>QR Code Generator</span>
-          </CardTitle>
-          <Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={handleLogout}>
-            <LogOut className="w-5 h-5" />
-          </Button>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+                <QrCode className="w-6 h-6" />
+                <span>QR Code Generator</span>
+            </CardTitle>
+            <div className="flex items-center gap-2">
+                <Link href="/private/dashboard">
+                    <Button variant="outline" size="icon">
+                        <LayoutDashboard className="w-5 h-5" />
+                    </Button>
+                </Link>
+                <Button variant="ghost" size="icon" onClick={handleLogout}>
+                    <LogOut className="w-5 h-5" />
+                </Button>
+            </div>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center gap-6">
           <div className="w-full space-y-4">
@@ -386,3 +394,5 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
     </div>
   );
 }
+
+    
