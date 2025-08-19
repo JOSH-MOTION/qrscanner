@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Type } from 'lucide-react';
+import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Type, Laptop } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-type QrCodeType = 'website' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'form';
+type QrCodeType = 'website' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'laptop';
 
 type WifiData = {
   ssid: string;
@@ -34,10 +35,14 @@ type VCardData = {
   country: string;
 };
 
-type CustomFormData = {
-  title: string;
-  reason: string;
-  details: string;
+type LaptopRequestData = {
+    studentName: string;
+    generation: string;
+    subject: string;
+    laptopId: string;
+    timeCollected: string;
+    condition: 'Good' | 'Fair' | 'Other';
+    conditionOther: string;
 }
 
 export default function QRCodeGenerator() {
@@ -52,7 +57,9 @@ export default function QRCodeGenerator() {
     firstName: '', lastName: '', phone: '', email: '',
     company: '', jobTitle: '', website: '', street: '', city: '', state: '', zip: '', country: ''
   });
-  const [customFormData, setCustomFormData] = useState<CustomFormData>({ title: '', reason: '', details: '' });
+  const [laptopRequestData, setLaptopRequestData] = useState<LaptopRequestData>({
+      studentName: '', generation: '', subject: '', laptopId: '', timeCollected: '', condition: 'Good', conditionOther: ''
+  });
 
 
   const handleWifiChange = (e: React.ChangeEvent<HTMLInputElement> | string, field: keyof WifiData | 'encryption') => {
@@ -67,9 +74,14 @@ export default function QRCodeGenerator() {
     setVcardData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleCustomFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setCustomFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleLaptopRequestChange = (e: React.ChangeEvent<HTMLInputElement> | string, field?: keyof LaptopRequestData) => {
+    if (typeof e === 'string') {
+      setLaptopRequestData(prev => ({ ...prev, condition: e as LaptopRequestData['condition']}));
+    } else {
+      setLaptopRequestData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    }
   };
+
 
   const generateQRCode = () => {
     if (qrType === 'website') {
@@ -91,10 +103,17 @@ URL:${website}
 ADR;TYPE=WORK:;;${street};${city};${state};${zip};${country}
 END:VCARD`;
       setQrValue(vCardString);
-    } else if (qrType === 'form') {
-      const { title, reason, details } = customFormData;
-      const formString = `Title: ${title}\nReason: ${reason}\nDetails: ${details}`;
-      setQrValue(formString);
+    } else if (qrType === 'laptop') {
+      const { studentName, generation, subject, laptopId, timeCollected, condition, conditionOther } = laptopRequestData;
+      const laptopRequestString = `Codetrain Africa - Laptop Request
+Date: ${new Date().toLocaleDateString()}
+Student Name: ${studentName}
+Generation: ${generation}
+Subject/Lesson: ${subject}
+Laptop ID: ${laptopId}
+Time Collected: ${timeCollected}
+Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
+      setQrValue(laptopRequestString);
     }
   };
 
@@ -138,30 +157,59 @@ END:VCARD`;
             />
           </div>
         );
-      case 'form':
+    case 'laptop':
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" name="title" value={customFormData.title} onChange={handleCustomFormChange} placeholder="e.g. Laptop Request" />
+            <div className="space-y-4 max-h-60 overflow-y-auto p-1">
+                 <div className="space-y-2">
+                    <Label htmlFor="studentName">Student Name</Label>
+                    <Input id="studentName" name="studentName" value={laptopRequestData.studentName} onChange={handleLaptopRequestChange} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="generation">Generation (Gen)</Label>
+                        <Input id="generation" name="generation" value={laptopRequestData.generation} onChange={handleLaptopRequestChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="subject">Subject/Lesson</Label>
+                        <Input id="subject" name="subject" value={laptopRequestData.subject} onChange={handleLaptopRequestChange} />
+                    </div>
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="laptopId">Laptop ID/Number</Label>
+                        <Input id="laptopId" name="laptopId" value={laptopRequestData.laptopId} onChange={handleLaptopRequestChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="timeCollected">Time Collected</Label>
+                        <Input id="timeCollected" name="timeCollected" type="time" value={laptopRequestData.timeCollected} onChange={handleLaptopRequestChange} />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label>Condition at Collection</Label>
+                    <RadioGroup
+                        value={laptopRequestData.condition}
+                        onValueChange={(value) => handleLaptopRequestChange(value, 'condition')}
+                        className="flex gap-4"
+                    >
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Good" id="c-good" />
+                            <Label htmlFor="c-good">Good</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Fair" id="c-fair" />
+                            <Label htmlFor="c-fair">Fair</Label>
+                        </div>
+                         <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Other" id="c-other" />
+                            <Label htmlFor="c-other">Other</Label>
+                        </div>
+                    </RadioGroup>
+                    {laptopRequestData.condition === 'Other' && (
+                        <Input name="conditionOther" value={laptopRequestData.conditionOther} onChange={handleLaptopRequestChange} placeholder="Please specify" className="mt-2" />
+                    )}
+                </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="reason">Reason for Request</Label>
-              <Input id="reason" name="reason" value={customFormData.reason} onChange={handleCustomFormChange} placeholder="e.g. For class project" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="details">Additional Details</Label>
-              <Textarea
-                id="details"
-                name="details"
-                value={customFormData.details}
-                onChange={handleCustomFormChange}
-                placeholder="Enter any other relevant details..."
-                rows={4}
-              />
-            </div>
-          </div>
-        );
+        )
       case 'wifi':
         return (
           <div className="space-y-4">
@@ -260,7 +308,7 @@ END:VCARD`;
 
   const qrOptions: { value: QrCodeType; label: string; icon: React.ElementType }[] = [
     { value: 'website', label: 'Website', icon: Globe },
-    { value: 'form', label: 'Form', icon: FileText },
+    { value: 'laptop', label: 'Laptop Request', icon: Laptop },
     { value: 'pdf', label: 'PDF', icon: FileText },
     { value: 'images', label: 'Images', icon: ImageIcon },
     { value: 'video', label: 'Video', icon: Video },
@@ -278,8 +326,8 @@ END:VCARD`;
               return !wifiData.ssid;
           case 'vcard':
               return !vcardData.firstName || !vcardData.lastName;
-          case 'form':
-              return !customFormData.title;
+          case 'laptop':
+              return !laptopRequestData.studentName || !laptopRequestData.laptopId;
           default:
               return true;
       }
