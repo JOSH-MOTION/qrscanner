@@ -34,19 +34,26 @@ type VCardData = {
   country: string;
 };
 
+type CustomFormData = {
+  title: string;
+  reason: string;
+  details: string;
+}
+
 export default function QRCodeGenerator() {
   const [inputValue, setInputValue] = useState<string>('https://firebase.google.com');
   const [qrValue, setQrValue] = useState<string>('https://firebase.google.com');
   const [fgColor, setFgColor] = useState<string>('#000000');
   const [bgColor, setBgColor] = useState<string>('#ffffff');
   const [qrType, setQrType] = useState<QrCodeType>('website');
-  const [formData, setFormData] = useState<string>('');
 
   const [wifiData, setWifiData] = useState<WifiData>({ ssid: '', encryption: 'WPA', password: '' });
   const [vcardData, setVcardData] = useState<VCardData>({
     firstName: '', lastName: '', phone: '', email: '',
     company: '', jobTitle: '', website: '', street: '', city: '', state: '', zip: '', country: ''
   });
+  const [customFormData, setCustomFormData] = useState<CustomFormData>({ title: '', reason: '', details: '' });
+
 
   const handleWifiChange = (e: React.ChangeEvent<HTMLInputElement> | string, field: keyof WifiData | 'encryption') => {
     if (typeof e === 'string') {
@@ -58,6 +65,10 @@ export default function QRCodeGenerator() {
 
   const handleVcardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setVcardData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleCustomFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setCustomFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const generateQRCode = () => {
@@ -81,7 +92,9 @@ ADR;TYPE=WORK:;;${street};${city};${state};${zip};${country}
 END:VCARD`;
       setQrValue(vCardString);
     } else if (qrType === 'form') {
-      setQrValue(formData);
+      const { title, reason, details } = customFormData;
+      const formString = `Title: ${title}\nReason: ${reason}\nDetails: ${details}`;
+      setQrValue(formString);
     }
   };
 
@@ -127,15 +140,26 @@ END:VCARD`;
         );
       case 'form':
         return (
-          <div className="space-y-2">
-            <Label htmlFor="form-input">Enter form data</Label>
-            <Textarea
-              id="form-input"
-              value={formData}
-              onChange={(e) => setFormData(e.target.value)}
-              placeholder="Enter your form data here..."
-              rows={8}
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input id="title" name="title" value={customFormData.title} onChange={handleCustomFormChange} placeholder="e.g. Laptop Request" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason for Request</Label>
+              <Input id="reason" name="reason" value={customFormData.reason} onChange={handleCustomFormChange} placeholder="e.g. For class project" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="details">Additional Details</Label>
+              <Textarea
+                id="details"
+                name="details"
+                value={customFormData.details}
+                onChange={handleCustomFormChange}
+                placeholder="Enter any other relevant details..."
+                rows={4}
+              />
+            </div>
           </div>
         );
       case 'wifi':
@@ -255,7 +279,7 @@ END:VCARD`;
           case 'vcard':
               return !vcardData.firstName || !vcardData.lastName;
           case 'form':
-              return !formData;
+              return !customFormData.title;
           default:
               return true;
       }
@@ -335,3 +359,5 @@ END:VCARD`;
     </div>
   );
 }
+
+    
