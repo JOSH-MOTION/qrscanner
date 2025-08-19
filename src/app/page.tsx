@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Type, Laptop } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
+import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type QrCodeType = 'website' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'laptop';
@@ -74,7 +73,7 @@ export default function QRCodeGenerator() {
     setVcardData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleLaptopRequestChange = (e: React.ChangeEvent<HTMLInputElement> | string, field?: keyof LaptopRequestData) => {
+  const handleLaptopRequestChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string, field?: keyof LaptopRequestData) => {
     if (typeof e === 'string') {
       setLaptopRequestData(prev => ({ ...prev, condition: e as LaptopRequestData['condition']}));
     } else {
@@ -233,7 +232,7 @@ Condition at Collection: ${condition === 'Other' ? conditionOther : condition}`;
             {wifiData.encryption !== 'nopass' && (
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" value={wifiData.password} onChange={handleWifiChange} />
+                <Input id="password" name="password" type="password" value={wifiData.password || ''} onChange={handleWifiChange} />
               </div>
             )}
           </div>
