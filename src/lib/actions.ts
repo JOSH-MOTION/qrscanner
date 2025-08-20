@@ -43,11 +43,11 @@ export async function getLaptopRequests(adminId: string): Promise<(LaptopRequest
     }
     const snapshot = await dbAdmin.collection('laptopRequests')
         .where('adminId', '==', adminId)
-        .orderBy('createdAt', 'desc')
         .get();
 
     const requests = snapshot.docs.map(doc => {
         const data = doc.data();
+        // Remove non-serializable fields like Timestamps before returning
         const { createdAt, ...serializableData } = data;
         return { 
             ...(serializableData as LaptopRequestData), 
