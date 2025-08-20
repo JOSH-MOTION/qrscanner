@@ -40,11 +40,11 @@ export async function getLaptopRequests(): Promise<(LaptopRequestData & { id: st
     const snapshot = await dbAdmin.collection('laptopRequests').orderBy('createdAt', 'desc').get();
     const requests = snapshot.docs.map(doc => {
         const data = doc.data();
+        // Remove non-serializable fields like Timestamps before sending to the client
+        const { createdAt, ...serializableData } = data;
         return { 
-            ...(data as LaptopRequestData), 
+            ...(serializableData as LaptopRequestData), 
             id: doc.id,
-            // Firestore Timestamps need to be converted to a serializable format.
-            // For this app, we don't need to display it, so we can omit it or stringify.
         };
     });
     return requests;
