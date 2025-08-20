@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge";
-import type { LaptopRequestData } from '@/ai/schemas/laptopRequestSchema';
+import type { LaptopRequestData } from '@/lib/schemas';
 import { UpdateReturnDialog } from './UpdateReturnDialog';
 import {
     Accordion,
@@ -53,7 +53,8 @@ export function RequestsTable({ requests, onUpdateRequest }: RequestsTableProps)
     }
 
     const formatLabel = (label: string) => {
-        return label.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        const result = label.replace(/([A-Z])/g, ' $1');
+        return result.charAt(0).toUpperCase() + result.slice(1);
     }
     
     return (
