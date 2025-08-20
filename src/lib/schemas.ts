@@ -24,6 +24,7 @@ export type FormStructureData = z.infer<typeof FormStructureSchema>;
 
 
 export const LaptopRequestSchema = z.object({
+    adminId: z.string().optional().describe('The UID of the admin who owns this request.'),
     studentName: z.string().describe('The name of the student.').optional(),
     generation: z.string().describe('The generation of the student.').optional(),
     subject: z.string().describe('The subject or lesson.').optional(),

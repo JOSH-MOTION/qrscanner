@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,15 +16,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LaptopRequestPage() {
     const { toast } = useToast();
+    const searchParams = useSearchParams();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [formStructure, setFormStructure] = useState<FormStructureData | null>(null);
     const [formData, setFormData] = useState<Record<string, string>>({});
     const [condition, setCondition] = useState('Good');
     const [conditionOther, setConditionOther] = useState('');
+    const [adminId, setAdminId] = useState<string | null>(null);
 
 
     useEffect(() => {
+        const adminIdFromParams = searchParams.get('adminId');
+        if (adminIdFromParams) {
+            setAdminId(adminIdFromParams);
+        }
+
         const fetchStructure = async () => {
             const structure = await getFormStructure();
             setFormStructure(structure);
@@ -36,7 +44,7 @@ export default function LaptopRequestPage() {
             }
         };
         fetchStructure();
-    }, []);
+    }, [searchParams]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -64,10 +72,19 @@ export default function LaptopRequestPage() {
             });
             return;
         }
+        if (!adminId) {
+             toast({
+                variant: "destructive",
+                title: "Configuration Error",
+                description: "This form is not linked to an administrator. Please use a valid QR code.",
+            });
+            return;
+        }
 
         setIsSubmitting(true);
         try {
             const result = await submitLaptopRequest({
+                adminId,
                 dynamicFields: formData,
                 condition: condition as 'Good' | 'Fair' | 'Other',
                 conditionOther: conditionOther,

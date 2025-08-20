@@ -9,16 +9,20 @@ import { Download } from 'lucide-react';
 import Link from 'next/link';
 import { getLaptopRequests } from '@/lib/actions';
 import type { LaptopRequestData } from '@/lib/schemas';
+import { useAuth } from '@/context/AuthContext';
 
 type LaptopRequestWithId = LaptopRequestData & { id: string };
 
 export default function AdminDashboard() {
     const [requests, setRequests] = useState<LaptopRequestWithId[]>([]);
     const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
 
     const fetchRequests = async () => {
+        if (!user) return;
+        setLoading(true);
         try {
-            const fetchedRequests = await getLaptopRequests();
+            const fetchedRequests = await getLaptopRequests(user.uid);
             setRequests(fetchedRequests);
         } catch (error) {
             console.error("Failed to fetch laptop requests:", error);
@@ -29,8 +33,10 @@ export default function AdminDashboard() {
     };
 
     useEffect(() => {
-        fetchRequests();
-    }, []);
+        if (user) {
+            fetchRequests();
+        }
+    }, [user]);
 
     const handleDownloadCsv = () => {
         if (requests.length === 0) return;

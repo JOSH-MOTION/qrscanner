@@ -17,6 +17,7 @@ import type { FormFieldData, FormStructureData } from '@/lib/schemas';
 import { getFormStructure, saveFormStructure } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
+import { useAuth } from '@/context/AuthContext';
 
 
 type QrCodeType = 'website' | 'text' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'laptop';
@@ -51,6 +52,7 @@ export default function QRCodeGenerator() {
   const [qrType, setQrType] = useState<QrCodeType>('website');
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
 
 
   const [wifiData, setWifiData] = useState<WifiData>({ ssid: '', encryption: 'WPA', password: '' });
@@ -66,14 +68,14 @@ export default function QRCodeGenerator() {
   // Set the base URL for the laptop request form
   const [laptopRequestUrl, setLaptopRequestUrl] = useState('');
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const url = `${window.location.origin}/laptop-request`;
+    if (typeof window !== 'undefined' && user) {
+      const url = `${window.location.origin}/laptop-request?adminId=${user.uid}`;
       setLaptopRequestUrl(url);
       if (qrType === 'laptop') {
         setQrValue(url);
       }
     }
-  }, [qrType]);
+  }, [qrType, user]);
   
   useEffect(() => {
     async function fetchStructure() {

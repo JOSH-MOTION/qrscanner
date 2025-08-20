@@ -36,11 +36,18 @@ export async function submitLaptopRequest(input: Omit<LaptopRequestData, 'status
 }
 
 
-export async function getLaptopRequests(): Promise<(LaptopRequestData & { id: string })[]> {
-    const snapshot = await dbAdmin.collection('laptopRequests').orderBy('createdAt', 'desc').get();
+export async function getLaptopRequests(adminId: string): Promise<(LaptopRequestData & { id: string })[]> {
+    if (!adminId) {
+        console.error("Admin ID is required to fetch laptop requests.");
+        return [];
+    }
+    const snapshot = await dbAdmin.collection('laptopRequests')
+        .where('adminId', '==', adminId)
+        .orderBy('createdAt', 'desc')
+        .get();
+
     const requests = snapshot.docs.map(doc => {
         const data = doc.data();
-        // Remove non-serializable fields like Timestamps before sending to the client
         const { createdAt, ...serializableData } = data;
         return { 
             ...(serializableData as LaptopRequestData), 
