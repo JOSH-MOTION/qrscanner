@@ -32,6 +32,7 @@ export const LaptopRequestSchema = z.object({
     timeCollected: z.string().describe('The time the laptop was collected.').optional(),
     condition: z.enum(['Good', 'Fair', 'Other']).describe('The condition of the laptop at collection.'),
     conditionOther: z.string().optional().describe('Details if collection condition is "Other".'),
+    createdAt: z.string().optional().describe('The timestamp when the request was created.'),
     
     // Dynamic fields
     dynamicFields: z.record(z.string()).optional().describe('Dynamic fields from the form'),

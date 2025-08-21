@@ -41,20 +41,36 @@ export async function getLaptopRequests(adminId: string): Promise<(LaptopRequest
         console.error("Admin ID is required to fetch laptop requests.");
         return [];
     }
-    const snapshot = await dbAdmin.collection('laptopRequests')
-        .where('adminId', '==', adminId)
-        .get();
+    // Fetch all requests and filter in the code. This is less efficient for very large
+    // datasets, but avoids the need for a composite index on Firestore, which is a
+    // common deployment issue.
+    const snapshot = await dbAdmin.collection('laptopRequests').get();
 
-    const requests = snapshot.docs.map(doc => {
-        const data = doc.data();
-        // Remove non-serializable fields like Timestamps before returning
-        const { createdAt, ...serializableData } = data;
-        return { 
-            ...(serializableData as LaptopRequestData), 
-            id: doc.id,
-        };
-    });
-    return requests;
+    const requests = snapshot.docs
+        .map(doc => {
+            const data = doc.data();
+            // Firestore timestamps need to be converted to be sent to the client.
+            const serializableData = {
+                ...data,
+                createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate().toISOString() : null,
+            };
+            return { 
+                ...(serializableData as LaptopRequestData), 
+                id: doc.id,
+            };
+        })
+        .filter(req => req.adminId === adminId)
+        .sort((a, b) => {
+            // Sort by creation time, newest first.
+            const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return timeB - timeA;
+        });
+
+    return requests.map(req => {
+        const { createdAt, ...rest } = req; // Don't send createdAt to client if not needed.
+        return rest;
+    }) as (LaptopRequestData & { id: string })[];
 }
 
 
