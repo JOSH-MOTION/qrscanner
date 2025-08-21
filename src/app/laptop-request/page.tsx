@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,19 +14,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function LaptopRequestPage() {
+function LaptopRequestForm() {
     const { toast } = useToast();
     const searchParams = useSearchParams();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSubmitted, setIsSubmitted] = useState(false);
-    const [formStructure, setFormStructure] = useState<FormStructureData | null>(null);
-    const [formData, setFormData] = useState<Record<string, string>>({});
-    const [condition, setCondition] = useState('Good');
-    const [conditionOther, setConditionOther] = useState('');
-    const [adminId, setAdminId] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [isSubmitted, setIsSubmitted] = React.useState(false);
+    const [formStructure, setFormStructure] = React.useState<FormStructureData | null>(null);
+    const [formData, setFormData] = React.useState<Record<string, string>>({});
+    const [condition, setCondition] = React.useState('Good');
+    const [conditionOther, setConditionOther] = React.useState('');
+    const [adminId, setAdminId] = React.useState<string | null>(null);
 
 
-    useEffect(() => {
+    React.useEffect(() => {
         const adminIdFromParams = searchParams.get('adminId');
         if (adminIdFromParams) {
             setAdminId(adminIdFromParams);
@@ -196,4 +196,38 @@ export default function LaptopRequestPage() {
             </Card>
         </div>
     );
+}
+
+function FormSkeleton() {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+            <Card className="w-full max-w-lg mx-auto shadow-lg">
+                <CardHeader>
+                    <CardTitle>Codetrain Africa</CardTitle>
+                    <CardDescription>Laptop Request Form</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <Skeleton className="h-8 w-1/3" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-8 w-1/3" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-8 w-1/3" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                </CardContent>
+                 <CardFooter className="flex justify-end">
+                    <Button disabled>Submit Request</Button>
+                </CardFooter>
+            </Card>
+        </div>
+    )
+}
+
+export default function LaptopRequestPage() {
+    return (
+        <Suspense fallback={<FormSkeleton />}>
+            <LaptopRequestForm />
+        </Suspense>
+    )
 }
