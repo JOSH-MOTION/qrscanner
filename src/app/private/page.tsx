@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, Loader2, Check, FileJson } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { UserProfile } from '@/lib/schemas';
 import { getUserProfile } from '@/lib/actions';
@@ -148,6 +148,9 @@ END:VCARD`;
 
   const handleSelectChange = (value: QrCodeType) => {
     setQrType(value);
+    if (value === 'form') {
+        // No auto-navigation
+    }
   }
 
   const renderInputs = () => {
@@ -296,6 +299,7 @@ END:VCARD`;
   
   const isGenerateDisabled = () => {
       if (isGenerating || isDone) return true;
+      if (qrType === 'form') return true; // Disable for form type itself
       switch(qrType) {
           case 'website':
               return !inputValue;
@@ -305,8 +309,6 @@ END:VCARD`;
               return !wifiData.ssid;
           case 'vcard':
               return !vcardData.firstName || !vcardData.lastName;
-          case 'form':
-              return false; // Enable for form type to generate the QR code for the link
           default:
               return true;
       }
@@ -380,19 +382,21 @@ END:VCARD`;
             </div>
           )}
 
-          <div className="w-full space-y-4">
-            <div className="flex items-center gap-4">
-              <Palette className="w-5 h-5 text-gray-500" />
-              <div className="flex items-center gap-2">
-                <Label htmlFor="fg-color">Foreground</Label>
-                <Input id="fg-color" type="color" value={fgColor} onChange={(e) => setFgColor(e.target.value)} className="w-12 h-8 p-1" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="bg-color">Background</Label>
-                <Input id="bg-color" type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-12 h-8 p-1" />
-              </div>
+          { qrType !== 'form' && (
+            <div className="w-full space-y-4">
+                <div className="flex items-center gap-4">
+                <Palette className="w-5 h-5 text-gray-500" />
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="fg-color">Foreground</Label>
+                    <Input id="fg-color" type="color" value={fgColor} onChange={(e) => setFgColor(e.target.value)} className="w-12 h-8 p-1" />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="bg-color">Background</Label>
+                    <Input id="bg-color" type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-12 h-8 p-1" />
+                </div>
+                </div>
             </div>
-          </div>
+          )}
         </CardContent>
         {qrType !== 'form' && (
             <CardFooter className="flex justify-center gap-2">

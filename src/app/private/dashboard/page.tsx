@@ -2,10 +2,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RequestsTable } from '@/components/RequestsTable';
-import { Download, Save, Plus, Trash2, LogOut } from 'lucide-react';
+import { Download, Save, Plus, Trash2, LogOut, ArrowLeft } from 'lucide-react';
 import { getLaptopRequests, getFormStructure, saveFormStructure, getUserProfile } from '@/lib/actions';
 import type { LaptopRequestData, FormStructureData, FormFieldData, UserProfile } from '@/lib/schemas';
 import { useAuth } from '@/context/AuthContext';
@@ -193,10 +194,17 @@ export default function AdminDashboard() {
     return (
         <div className="flex flex-col items-center justify-start min-h-screen bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 md:p-8">
             <div className="w-full max-w-6xl">
-                 <div className="w-full flex justify-between items-center mb-4">
-                    <div className="flex flex-col">
-                        <h1 className="text-2xl font-bold">Form Dashboard</h1>
-                         {userProfile && <p className="text-sm text-muted-foreground mt-1">Welcome, {userProfile.username}!</p>}
+                 <div className="w-full flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-4">
+                        <Link href="/private">
+                            <Button variant="outline" size="icon">
+                                <ArrowLeft className="w-5 h-5" />
+                            </Button>
+                        </Link>
+                        <div className="flex flex-col">
+                            <h1 className="text-2xl font-bold">Form Dashboard</h1>
+                            {userProfile && <p className="text-sm text-muted-foreground mt-1">Welcome, {userProfile.username}!</p>}
+                        </div>
                     </div>
                      <Button variant="ghost" size="icon" onClick={handleLogout}>
                         <LogOut className="w-5 h-5" />
