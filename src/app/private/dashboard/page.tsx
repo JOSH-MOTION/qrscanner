@@ -23,6 +23,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 type LaptopRequestWithId = LaptopRequestData & { id: string };
 
+const ensureUrlProtocol = (url: string) => {
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url)) {
+        return `https://${url}`;
+    }
+    return url;
+};
+
 export default function AdminDashboard() {
     const [requests, setRequests] = useState<LaptopRequestWithId[]>([]);
     const [loading, setLoading] = useState(true);
@@ -38,7 +46,7 @@ export default function AdminDashboard() {
 
      useEffect(() => {
         if (typeof window !== 'undefined' && user) {
-            setLaptopRequestUrl(`${window.location.origin}/laptop-request?adminId=${user.uid}`);
+            setLaptopRequestUrl(ensureUrlProtocol(`${window.location.origin}/laptop-request?adminId=${user.uid}`));
         }
         if (user) {
             const fetchUserProfile = async () => {
@@ -125,14 +133,14 @@ export default function AdminDashboard() {
         
         const headers = [
             ...dynamicFieldHeaders,
-            formStructure.conditionField.label,
-            "Other Condition Details",
+            formStructure.conditionField.enabled ? formStructure.conditionField.label : null,
+            formStructure.conditionField.enabled ? "Other Condition Details" : null,
             "Status", 
             "Time Returned", 
             "Condition at Return", 
             "Return Condition Other", 
             "Supervisor"
-        ];
+        ].filter(Boolean);
         
         const csvRows = [
             headers.join(','),
@@ -140,10 +148,15 @@ export default function AdminDashboard() {
                 const dynamicFieldValues = formStructure.fields.map(field => 
                     `"${req.dynamicFields?.[field.id] || ''}"`
                 );
+                
+                const conditionFields = formStructure.conditionField.enabled ? [
+                    `"${req.condition || ''}"`,
+                    `"${req.conditionOther || ''}"`
+                ] : [];
+
                 const row = [
                     ...dynamicFieldValues,
-                    `"${req.condition || ''}"`,
-                    `"${req.conditionOther || ''}"`,
+                    ...conditionFields,
                     `"${req.status || ''}"`,
                     `"${req.timeReturned || ''}"`,
                     `"${req.conditionAtReturn || ''}"`,
