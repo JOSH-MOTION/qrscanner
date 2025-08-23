@@ -5,16 +5,18 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RequestsTable } from '@/components/RequestsTable';
-import { Download, QrCode, Save, Plus, Trash2, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
-import { getLaptopRequests, getFormStructure, saveFormStructure } from '@/lib/actions';
-import type { LaptopRequestData, FormStructureData, FormFieldData } from '@/lib/schemas';
+import { Download, Save, Plus, Trash2, LogOut } from 'lucide-react';
+import { getLaptopRequests, getFormStructure, saveFormStructure, getUserProfile } from '@/lib/actions';
+import type { LaptopRequestData, FormStructureData, FormFieldData, UserProfile } from '@/lib/schemas';
 import { useAuth } from '@/context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 
 type LaptopRequestWithId = LaptopRequestData & { id: string };
@@ -24,6 +26,8 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const { user } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
     // State for dynamic form builder
     const [formStructure, setFormStructure] = useState<FormStructureData | null>(null);
@@ -33,6 +37,13 @@ export default function AdminDashboard() {
      useEffect(() => {
         if (typeof window !== 'undefined' && user) {
             setLaptopRequestUrl(`${window.location.origin}/laptop-request?adminId=${user.uid}`);
+        }
+        if (user) {
+            const fetchUserProfile = async () => {
+                const profile = await getUserProfile(user.uid);
+                setUserProfile(profile);
+            };
+            fetchUserProfile();
         }
     }, [user]);
 
@@ -65,7 +76,12 @@ export default function AdminDashboard() {
             fetchRequests();
             fetchFormStructure();
         }
-    }, [user]);
+    }, [user, toast]);
+
+     const handleLogout = async () => {
+        await signOut(auth);
+        router.push('/login');
+    };
 
     const handleDownloadCsv = () => {
         if (requests.length === 0) return;
@@ -169,10 +185,16 @@ export default function AdminDashboard() {
     return (
         <div className="flex flex-col items-center justify-start min-h-screen bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 md:p-8">
             <div className="w-full max-w-6xl">
-                 <Link href="/private" className="text-sm mb-4 inline-flex items-center gap-2 text-blue-500 hover:underline">
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to QR Generator
-                </Link>
+                 <div className="w-full flex justify-between items-center mb-4">
+                    <div className="flex flex-col">
+                        <h1 className="text-2xl font-bold">Laptop Request Dashboard</h1>
+                         {userProfile && <p className="text-sm text-muted-foreground mt-1">Welcome, {userProfile.username}!</p>}
+                    </div>
+                     <Button variant="ghost" size="icon" onClick={handleLogout}>
+                        <LogOut className="w-5 h-5" />
+                    </Button>
+                </div>
+
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-1 space-y-8">

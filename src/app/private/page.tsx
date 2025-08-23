@@ -8,15 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, LayoutDashboard, Trash2, Plus, Save, Loader2, Check } from 'lucide-react';
+import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, Loader2, Check } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { FormFieldData, FormStructureData, UserProfile } from '@/lib/schemas';
-import { getFormStructure, saveFormStructure, getUserProfile } from '@/lib/actions';
-import { useToast } from '@/hooks/use-toast';
-import { Switch } from '@/components/ui/switch';
+import type { UserProfile } from '@/lib/schemas';
+import { getUserProfile } from '@/lib/actions';
 import { useAuth } from '@/context/AuthContext';
 
 
@@ -51,7 +49,6 @@ export default function QRCodeGenerator() {
   const [bgColor, setBgColor] = useState<string>('#ffffff');
   const [qrType, setQrType] = useState<QrCodeType>('website');
   const router = useRouter();
-  const { toast } = useToast();
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
@@ -65,11 +62,6 @@ export default function QRCodeGenerator() {
     company: '', jobTitle: '', website: '', street: '', city: '', state: '', zip: '', country: ''
   });
   
-  // State for dynamic form builder
-  const [formStructure, setFormStructure] = useState<FormStructureData | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Set the base URL for the laptop request form
   const [laptopRequestUrl, setLaptopRequestUrl] = useState('');
   
   useEffect(() => {
@@ -154,10 +146,9 @@ END:VCARD`;
   };
 
   const handleSelectChange = (value: QrCodeType) => {
+    setQrType(value);
     if (value === 'laptop') {
-        router.push('/private/dashboard');
-    } else {
-        setQrType(value);
+        generateQRCode();
     }
   }
 
@@ -280,6 +271,15 @@ END:VCARD`;
                 </div>
             </div>
         )
+       case 'laptop':
+        return (
+            <div className="text-center p-4">
+                <p className="text-sm text-muted-foreground mb-2">This QR code points to the laptop request form.</p>
+                <Link href="/private/dashboard" className="text-sm text-blue-500 hover:underline">
+                    Go to Laptop Dashboard
+                </Link>
+            </div>
+        )
       default:
         return <p className="text-sm text-muted-foreground text-center py-8">Select a QR code type to see more options.</p>;
     }
@@ -309,6 +309,8 @@ END:VCARD`;
               return !wifiData.ssid;
           case 'vcard':
               return !vcardData.firstName || !vcardData.lastName;
+          case 'laptop':
+              return true; // Disable generate button for laptop type as it's automatic
           default:
               return true;
       }
