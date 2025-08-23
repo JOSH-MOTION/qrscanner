@@ -147,9 +147,10 @@ END:VCARD`;
   };
 
   const handleSelectChange = (value: QrCodeType) => {
-    setQrType(value);
     if (value === 'form') {
-        generateQRCode();
+      router.push('/private/dashboard');
+    } else {
+      setQrType(value);
     }
   }
 
@@ -273,14 +274,7 @@ END:VCARD`;
             </div>
         )
        case 'form':
-        return (
-            <div className="text-center p-4">
-                <p className="text-sm text-muted-foreground mb-2">This QR code points to the dynamic form.</p>
-                <Link href="/private/dashboard" className="text-sm text-blue-500 hover:underline">
-                    Go to Form Dashboard
-                </Link>
-            </div>
-        )
+        return null;
       default:
         return <p className="text-sm text-muted-foreground text-center py-8">Select a QR code type to see more options.</p>;
     }
