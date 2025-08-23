@@ -1,6 +1,6 @@
 
 import { ImageResponse } from 'next/og';
-import { JOSHICon } from '@/components/JOSHIcon';
+import { JOBEIcon } from '@/components/JOBEIcon';
 
 // Route segment config
 export const runtime = 'edge';
@@ -29,7 +29,7 @@ export default function Icon() {
           borderRadius: '6px'
         }}
       >
-        <JOSHICon style={{ width: 24, height: 24 }}/>
+        <JOBEIcon style={{ width: 24, height: 24 }}/>
       </div>
     ),
     {

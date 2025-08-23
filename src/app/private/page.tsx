@@ -16,7 +16,7 @@ import Link from 'next/link';
 import type { UserProfile } from '@/lib/schemas';
 import { getUserProfile } from '@/lib/actions';
 import { useAuth } from '@/context/AuthContext';
-import { JOSHICon } from '@/components/JOSHIcon';
+import { JOBEIcon } from '@/components/JOBEIcon';
 
 
 type QrCodeType = 'website' | 'text' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'form';
@@ -327,8 +327,8 @@ END:VCARD`;
         <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex flex-col">
                 <CardTitle className="flex items-center gap-2">
-                    <JOSHICon className="w-6 h-6" />
-                    <span>Josh QR Code</span>
+                    <JOBEIcon className="w-6 h-6" />
+                    <span>JOBE QR Code</span>
                 </CardTitle>
                  {userProfile && <p className="text-sm text-muted-foreground mt-1">Welcome, {userProfile.username}!</p>}
             </div>
