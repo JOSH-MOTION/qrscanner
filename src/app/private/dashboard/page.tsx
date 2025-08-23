@@ -54,8 +54,8 @@ export default function AdminDashboard() {
             const fetchedRequests = await getLaptopRequests(user.uid);
             setRequests(fetchedRequests);
         } catch (error) {
-            console.error("Failed to fetch laptop requests:", error);
-            toast({ variant: 'destructive', title: "Error", description: "Failed to fetch laptop requests."})
+            console.error("Failed to fetch form requests:", error);
+            toast({ variant: 'destructive', title: "Error", description: "Failed to fetch form requests."})
         } finally {
             setLoading(false);
         }
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
             <div className="w-full max-w-6xl">
                  <div className="w-full flex justify-between items-center mb-4">
                     <div className="flex flex-col">
-                        <h1 className="text-2xl font-bold">Laptop Request Dashboard</h1>
+                        <h1 className="text-2xl font-bold">Form Dashboard</h1>
                          {userProfile && <p className="text-sm text-muted-foreground mt-1">Welcome, {userProfile.username}!</p>}
                     </div>
                      <Button variant="ghost" size="icon" onClick={handleLogout}>
@@ -200,8 +200,8 @@ export default function AdminDashboard() {
                     <div className="lg:col-span-1 space-y-8">
                         <Card className="w-full shadow-lg">
                             <CardHeader>
-                                <CardTitle>Laptop Form QR Code</CardTitle>
-                                <CardDescription>Students scan this to open the request form.</CardDescription>
+                                <CardTitle>Form QR Code</CardTitle>
+                                <CardDescription>Users scan this to open the request form.</CardDescription>
                             </CardHeader>
                             <CardContent className="flex flex-col items-center justify-center gap-4">
                                 {laptopRequestUrl ? (
@@ -259,8 +259,8 @@ export default function AdminDashboard() {
                             <CardHeader>
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                     <div>
-                                        <CardTitle>Laptop Requests</CardTitle>
-                                        <CardDescription>View all submitted laptop requests.</CardDescription>
+                                        <CardTitle>Form Submissions</CardTitle>
+                                        <CardDescription>View all submitted form requests.</CardDescription>
                                     </div>
                                     <Button onClick={handleDownloadCsv} disabled={requests.length === 0}>
                                         <Download className="mr-2 h-4 w-4" />
@@ -278,5 +278,3 @@ export default function AdminDashboard() {
         </div>
     );
 }
-
-    

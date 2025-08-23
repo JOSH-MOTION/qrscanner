@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, Loader2, Check } from 'lucide-react';
+import { Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, Loader2, Check, FileJson } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -16,9 +16,10 @@ import Link from 'next/link';
 import type { UserProfile } from '@/lib/schemas';
 import { getUserProfile } from '@/lib/actions';
 import { useAuth } from '@/context/AuthContext';
+import { JOSHICon } from '@/components/JOSHIcon';
 
 
-type QrCodeType = 'website' | 'text' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'laptop';
+type QrCodeType = 'website' | 'text' | 'pdf' | 'images' | 'video' | 'wifi' | 'menu' | 'business' | 'vcard' | 'form';
 
 type WifiData = {
   ssid: string;
@@ -107,7 +108,7 @@ EMAIL:${email}
 URL:${website}
 ADR;TYPE=WORK:;;${street};${city};${state};${zip};${country}
 END:VCARD`;
-        } else if (qrType === 'laptop') {
+        } else if (qrType === 'form') {
             finalValue = laptopRequestUrl;
         }
         setQrValue(finalValue);
@@ -147,7 +148,7 @@ END:VCARD`;
 
   const handleSelectChange = (value: QrCodeType) => {
     setQrType(value);
-    if (value === 'laptop') {
+    if (value === 'form') {
         generateQRCode();
     }
   }
@@ -271,12 +272,12 @@ END:VCARD`;
                 </div>
             </div>
         )
-       case 'laptop':
+       case 'form':
         return (
             <div className="text-center p-4">
-                <p className="text-sm text-muted-foreground mb-2">This QR code points to the laptop request form.</p>
+                <p className="text-sm text-muted-foreground mb-2">This QR code points to the dynamic form.</p>
                 <Link href="/private/dashboard" className="text-sm text-blue-500 hover:underline">
-                    Go to Laptop Dashboard
+                    Go to Form Dashboard
                 </Link>
             </div>
         )
@@ -288,7 +289,7 @@ END:VCARD`;
   const qrOptions: { value: QrCodeType; label: string; icon: React.ElementType, color: string }[] = [
     { value: 'website', label: 'Website', icon: Globe, color: 'text-blue-500' },
     { value: 'text', label: 'Text', icon: FileText, color: 'text-gray-500' },
-    { value: 'laptop', label: 'Laptop Request', icon: Laptop, color: 'text-purple-500' },
+    { value: 'form', label: 'Form', icon: FileJson, color: 'text-purple-500' },
     { value: 'pdf', label: 'PDF', icon: FileText, color: 'text-red-500' },
     { value: 'images', label: 'Images', icon: ImageIcon, color: 'text-pink-500' },
     { value: 'video', label: 'Video', icon: Video, color: 'text-rose-500' },
@@ -309,7 +310,7 @@ END:VCARD`;
               return !wifiData.ssid;
           case 'vcard':
               return !vcardData.firstName || !vcardData.lastName;
-          case 'laptop':
+          case 'form':
               return true; // Disable generate button for laptop type as it's automatic
           default:
               return true;
@@ -332,8 +333,8 @@ END:VCARD`;
         <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex flex-col">
                 <CardTitle className="flex items-center gap-2">
-                    <QrCode className="w-6 h-6" />
-                    <span>QR Code Generator</span>
+                    <JOSHICon className="w-6 h-6" />
+                    <span>Josh QR Code</span>
                 </CardTitle>
                  {userProfile && <p className="text-sm text-muted-foreground mt-1">Welcome, {userProfile.username}!</p>}
             </div>
@@ -410,5 +411,3 @@ END:VCARD`;
     </div>
   );
 }
-
-    

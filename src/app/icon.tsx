@@ -1,6 +1,6 @@
 
-import { QrCode } from 'lucide-react';
 import { ImageResponse } from 'next/og';
+import { JOSHICon } from '@/components/JOSHIcon';
 
 // Route segment config
 export const runtime = 'edge';
@@ -29,7 +29,7 @@ export default function Icon() {
           borderRadius: '6px'
         }}
       >
-        <QrCode style={{ width: 20, height: 20 }}/>
+        <JOSHICon style={{ width: 24, height: 24 }}/>
       </div>
     ),
     {
