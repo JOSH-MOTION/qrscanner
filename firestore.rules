@@ -1,0 +1,36 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Rules for user profiles
+    match /users/{userId} {
+      // Allow a user to read, create, and update their own profile.
+      // No one can delete a profile.
+      allow read, create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // Rules for the dynamic form structure
+    match /formStructures/laptopRequest {
+      // Allow anyone to read the form structure so the public form can be rendered.
+      allow get: if true;
+      // Allow only authenticated admins to create or update the form structure.
+      allow write: if request.auth != null;
+    }
+    
+    // Rules for laptop loan requests
+    match /laptopRequests/{requestId} {
+      // Allow anyone to create a new request (students are not authenticated).
+      // Ensure the incoming data has the required 'adminId' field.
+      allow create: if request.resource.data.adminId is string;
+
+      // Allow an admin to read or update a request only if their UID matches the adminId on the document.
+      allow read, update: if request.auth != null && request.auth.uid == resource.data.adminId;
+      
+      // Do not allow requests to be deleted.
+      allow delete: if false;
+    }
+  }
+}
