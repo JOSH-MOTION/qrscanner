@@ -42,6 +42,13 @@ type VCardData = {
   country: string;
 };
 
+type BusinessData = {
+  name: string;
+  phone: string;
+  website: string;
+  address: string;
+}
+
 
 export default function QRCodeGenerator() {
   const [inputValue, setInputValue] = useState<string>('https://firebase.google.com');
@@ -62,6 +69,7 @@ export default function QRCodeGenerator() {
     firstName: '', lastName: '', phone: '', email: '',
     company: '', jobTitle: '', website: '', street: '', city: '', state: '', zip: '', country: ''
   });
+  const [businessData, setBusinessData] = useState<BusinessData>({ name: '', phone: '', website: '', address: ''});
   
   const [laptopRequestUrl, setLaptopRequestUrl] = useState('');
   
@@ -86,7 +94,7 @@ export default function QRCodeGenerator() {
   
   const generateQRCodeValue = () => {
       let finalValue = '';
-      if (qrType === 'website') {
+      if (qrType === 'website' || qrType === 'pdf' || qrType === 'images' || qrType === 'video' || qrType === 'menu') {
         finalValue = inputValue || 'https://';
       } else if (qrType === 'text') {
         finalValue = inputValue || ' ';
@@ -108,6 +116,16 @@ EMAIL:${email}
 URL:${website}
 ADR;TYPE=WORK:;;${street};${city};${state};${zip};${country}
 END:VCARD`;
+      } else if (qrType === 'business') {
+        const { name, phone, website, address } = businessData;
+        if (!name) return '';
+        finalValue = `BEGIN:VCARD
+VERSION:3.0
+FN:${name}
+TEL;TYPE=WORK,VOICE:${phone}
+URL:${website}
+ADR;TYPE=WORK:;;${address}
+END:VCARD`;
       } else if (qrType === 'form') {
           finalValue = laptopRequestUrl;
       }
@@ -117,7 +135,7 @@ END:VCARD`;
   useEffect(() => {
       const newQrValue = generateQRCodeValue();
       setQrValue(newQrValue);
-  }, [inputValue, wifiData, vcardData, qrType, laptopRequestUrl]);
+  }, [inputValue, wifiData, vcardData, businessData, qrType, laptopRequestUrl]);
 
 
   const handleGenerateClick = () => {
@@ -161,6 +179,7 @@ END:VCARD`;
 
   const handleSelectChange = (value: QrCodeType) => {
     setQrType(value);
+    setInputValue(''); // Reset main input on type change
     if (value === 'form') {
       router.push('/private/dashboard');
     }
@@ -194,6 +213,45 @@ END:VCARD`;
             />
           </div>
         );
+       case 'pdf':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="qr-input">Enter PDF URL</Label>
+            <Input
+              id="qr-input"
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="e.g. https://example.com/document.pdf"
+            />
+          </div>
+        );
+      case 'images':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="qr-input">Enter Image Gallery URL</Label>
+            <Input
+              id="qr-input"
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="e.g. https://example.com/gallery"
+            />
+          </div>
+        );
+       case 'video':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="qr-input">Enter Video URL</Label>
+            <Input
+              id="qr-input"
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="e.g. https://youtube.com/watch?v=..."
+            />
+          </div>
+        );
       case 'wifi':
         return (
           <div className="space-y-4">
@@ -221,7 +279,41 @@ END:VCARD`;
               </div>
             )}
           </div>
-        )
+        );
+      case 'menu':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="qr-input">Enter Menu URL</Label>
+            <Input
+              id="qr-input"
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="e.g. https://example.com/menu"
+            />
+          </div>
+        );
+       case 'business':
+        return (
+          <div className="space-y-4 max-h-60 overflow-y-auto p-1">
+            <div className="space-y-2">
+              <Label htmlFor="businessName">Business Name</Label>
+              <Input id="businessName" value={businessData.name} onChange={(e) => setBusinessData(prev => ({...prev, name: e.target.value}))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="businessPhone">Phone Number</Label>
+              <Input id="businessPhone" type="tel" value={businessData.phone} onChange={(e) => setBusinessData(prev => ({...prev, phone: e.target.value}))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="businessWebsite">Website</Label>
+              <Input id="businessWebsite" type="url" value={businessData.website} onChange={(e) => setBusinessData(prev => ({...prev, website: e.target.value}))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="businessAddress">Address</Label>
+              <Input id="businessAddress" value={businessData.address} onChange={(e) => setBusinessData(prev => ({...prev, address: e.target.value}))} />
+            </div>
+          </div>
+        );
       case 'vcard':
         return (
             <div className="space-y-4 max-h-60 overflow-y-auto p-1">
@@ -288,7 +380,7 @@ END:VCARD`;
        case 'form':
          return (
           <div className="text-center p-4 border rounded-md">
-            <p className="text-sm text-muted-foreground mb-4">Manage your form submissions and settings in the dashboard.</p>
+            <p className="text-sm text-muted-foreground mb-4">This will generate a QR code for your custom form.</p>
             <Button onClick={() => router.push('/private/dashboard')}>Go to Dashboard</Button>
           </div>
         );
