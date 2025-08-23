@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Defines the Zod schema and TypeScript types for laptop request data.
  */
@@ -56,3 +57,14 @@ export const UpdateLaptopRequestSchema = z.object({
 });
 
 export type UpdateLaptopRequestData = z.infer<typeof UpdateLaptopRequestSchema>;
+
+
+export const UserProfileSchema = z.object({
+    uid: z.string(),
+    email: z.string(),
+    username: z.string(),
+});
+
+export type UserProfile = z.infer<typeof UserProfileSchema>;
+
+    

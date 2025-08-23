@@ -1,7 +1,8 @@
+
 'use server';
 
 import { z } from 'zod';
-import { type LaptopRequestData, type FormStructureData } from '@/lib/schemas';
+import { type LaptopRequestData, type FormStructureData, type UserProfile } from '@/lib/schemas';
 import { dbAdmin } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -133,3 +134,29 @@ export async function getFormStructure(): Promise<FormStructureData | null> {
         };
     }
 }
+
+export async function createUserProfile(profile: UserProfile): Promise<{ success: boolean; message: string }> {
+    try {
+        await dbAdmin.collection('users').doc(profile.uid).set(profile);
+        return { success: true, message: 'User profile created successfully.' };
+    } catch (error: any) {
+        console.error("Error creating user profile: ", error);
+        return { success: false, message: `Failed to create user profile: ${error.message}` };
+    }
+}
+
+export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+    try {
+        const userDocRef = dbAdmin.collection('users').doc(uid);
+        const docSnap = await userDocRef.get();
+        if (docSnap.exists) {
+            return docSnap.data() as UserProfile;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        return null;
+    }
+}
+
+    

@@ -13,8 +13,8 @@ import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { FormFieldData, FormStructureData } from '@/lib/schemas';
-import { getFormStructure, saveFormStructure } from '@/lib/actions';
+import type { FormFieldData, FormStructureData, UserProfile } from '@/lib/schemas';
+import { getFormStructure, saveFormStructure, getUserProfile } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/AuthContext';
@@ -53,6 +53,8 @@ export default function QRCodeGenerator() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
 
   const [wifiData, setWifiData] = useState<WifiData>({ ssid: '', encryption: 'WPA', password: '' });
@@ -67,7 +69,15 @@ export default function QRCodeGenerator() {
 
   // Set the base URL for the laptop request form
   const [laptopRequestUrl, setLaptopRequestUrl] = useState('');
+  
   useEffect(() => {
+    if (user) {
+        const fetchUserProfile = async () => {
+            const profile = await getUserProfile(user.uid);
+            setUserProfile(profile);
+        };
+        fetchUserProfile();
+    }
     if (typeof window !== 'undefined' && user) {
       const url = `${window.location.origin}/laptop-request?adminId=${user.uid}`;
       setLaptopRequestUrl(url);
@@ -145,6 +155,7 @@ export default function QRCodeGenerator() {
   };
 
   const generateQRCode = async () => {
+    setIsGenerating(true);
     if (qrType === 'website') {
       setQrValue(inputValue);
     } else if (qrType === 'text') {
@@ -169,6 +180,8 @@ END:VCARD`;
     } else if (qrType === 'laptop') {
         setQrValue(laptopRequestUrl);
     }
+    // A small delay to give the user feedback
+    setTimeout(() => setIsGenerating(false), 300);
   };
 
   const downloadQRCode = () => {
@@ -372,6 +385,7 @@ END:VCARD`;
   ];
   
   const isGenerateDisabled = () => {
+      if (isGenerating) return true;
       switch(qrType) {
           case 'website':
               return !inputValue;
@@ -392,10 +406,13 @@ END:VCARD`;
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md mx-auto shadow-lg relative">
         <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-                <QrCode className="w-6 h-6" />
-                <span>QR Code Generator</span>
-            </CardTitle>
+            <div className="flex flex-col">
+                <CardTitle className="flex items-center gap-2">
+                    <QrCode className="w-6 h-6" />
+                    <span>QR Code Generator</span>
+                </CardTitle>
+                 {userProfile && <p className="text-sm text-muted-foreground mt-1">Welcome, {userProfile.username}!</p>}
+            </div>
             <div className="flex items-center gap-2">
                 <Link href="/private/dashboard">
                     <Button variant="outline" size="icon">
@@ -463,7 +480,9 @@ END:VCARD`;
           </div>
         </CardContent>
         <CardFooter className="flex justify-center gap-2">
-          <Button onClick={generateQRCode} disabled={isGenerateDisabled()}>Generate QR Code</Button>
+          <Button onClick={generateQRCode} disabled={isGenerateDisabled()}>
+            {isGenerating ? 'Generating...' : 'Generate QR Code'}
+            </Button>
           <Button variant="outline" onClick={downloadQRCode} disabled={!qrValue}>
             Download
           </Button>
@@ -472,3 +491,5 @@ END:VCARD`;
     </div>
   );
 }
+
+    
