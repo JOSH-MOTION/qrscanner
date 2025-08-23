@@ -86,19 +86,22 @@ export default function AdminDashboard() {
     };
 
     const handleDownloadCsv = () => {
-        if (requests.length === 0) return;
+        if (requests.length === 0 || !formStructure) {
+            toast({
+                variant: 'destructive',
+                title: 'No Data',
+                description: 'There are no requests to download.',
+            });
+            return;
+        }
         
-        // Dynamically generate headers from the first request's dynamic fields
-        const firstRequest = requests[0];
-        const dynamicFieldKeys = firstRequest.dynamicFields ? Object.keys(firstRequest.dynamicFields) : [];
-        const dynamicFieldHeaders = dynamicFieldKeys.map(key => key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()));
-
+        // Generate headers from the form structure and add standard fields
+        const dynamicFieldHeaders = formStructure.fields.map(field => field.label);
+        
         const headers = [
-            "ID", 
             ...dynamicFieldHeaders,
-            "Time Collected", 
-            "Condition", 
-            "Other Details", 
+            formStructure.conditionField.label,
+            "Other Condition Details",
             "Status", 
             "Time Returned", 
             "Condition at Return", 
@@ -107,34 +110,35 @@ export default function AdminDashboard() {
         ];
         
         const csvRows = [
-            headers.join(','),
-            ...requests.map(row => {
-                const dynamicFieldValues = dynamicFieldKeys.map(key => `"${row.dynamicFields?.[key] || ''}"`);
-                return [
-                    row.id, 
+            headers.join(','), // Header row
+            ...requests.map(req => {
+                const dynamicFieldValues = formStructure.fields.map(field => 
+                    `"${req.dynamicFields?.[field.id] || ''}"`
+                );
+                const row = [
                     ...dynamicFieldValues,
-                    `"${row.dynamicFields?.timeCollected || ''}"`,
-                    row.condition, 
-                    `"${row.conditionOther || ''}"`, 
-                    row.status,
-                    `"${row.timeReturned || ''}"`,
-                    `"${row.conditionAtReturn || ''}"`,
-                    `"${row.conditionAtReturnOther || ''}"`,
-                    `"${row.supervisor || ''}"`
-                ].join(',');
+                    `"${req.condition || ''}"`,
+                    `"${req.conditionOther || ''}"`,
+                    `"${req.status || ''}"`,
+                    `"${req.timeReturned || ''}"`,
+                    `"${req.conditionAtReturn || ''}"`,
+                    `"${req.conditionAtReturnOther || ''}"`,
+                    `"${req.supervisor || ''}"`
+                ];
+                return row.join(',');
             })
         ];
         
-        const csvString = csvRows.join('\\n');
-        const blob = new Blob([csvString], { type: 'text/csv' });
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.setAttribute('hidden', '');
-        a.setAttribute('href', url);
-        a.setAttribute('download', 'laptop_requests.csv');
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'form_submissions.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
     
     const handleUpdateRequest = (updatedRequest: LaptopRequestWithId) => {
