@@ -83,21 +83,21 @@ export default function QRCodeGenerator() {
     await signOut(auth);
     router.push('/login');
   };
-
-  const generateQRCode = () => {
-    setIsDone(false);
-    setIsGenerating(async () => {
-        let finalValue = '';
-        if (qrType === 'website') {
-          finalValue = inputValue;
-        } else if (qrType === 'text') {
-          finalValue = inputValue;
-        } else if (qrType === 'wifi') {
-          const { ssid, encryption, password } = wifiData;
-          finalValue = `WIFI:T:${encryption};S:${ssid};${encryption !== 'nopass' ? `P:${password};` : ''};`;
-        } else if (qrType === 'vcard') {
-          const { firstName, lastName, phone, email, company, jobTitle, website, street, city, state, zip, country } = vcardData;
-          finalValue = `BEGIN:VCARD
+  
+  const generateQRCodeValue = () => {
+      let finalValue = '';
+      if (qrType === 'website') {
+        finalValue = inputValue || 'https://';
+      } else if (qrType === 'text') {
+        finalValue = inputValue || ' ';
+      } else if (qrType === 'wifi') {
+        const { ssid, encryption, password } = wifiData;
+        if (!ssid) return '';
+        finalValue = `WIFI:T:${encryption};S:${ssid};${encryption !== 'nopass' ? `P:${password};` : ''};`;
+      } else if (qrType === 'vcard') {
+        const { firstName, lastName, phone, email, company, jobTitle, website, street, city, state, zip, country } = vcardData;
+        if (!firstName && !lastName) return '';
+        finalValue = `BEGIN:VCARD
 VERSION:3.0
 N:${lastName};${firstName}
 FN:${firstName} ${lastName}
@@ -108,10 +108,23 @@ EMAIL:${email}
 URL:${website}
 ADR;TYPE=WORK:;;${street};${city};${state};${zip};${country}
 END:VCARD`;
-        } else if (qrType === 'form') {
-            finalValue = laptopRequestUrl;
-        }
-        setQrValue(finalValue);
+      } else if (qrType === 'form') {
+          finalValue = laptopRequestUrl;
+      }
+      return finalValue;
+  }
+
+  useEffect(() => {
+      const newQrValue = generateQRCodeValue();
+      setQrValue(newQrValue);
+  }, [inputValue, wifiData, vcardData, qrType, laptopRequestUrl]);
+
+
+  const handleGenerateClick = () => {
+    setIsDone(false);
+    setIsGenerating(async () => {
+        const value = generateQRCodeValue();
+        setQrValue(value);
 
         // Simulate processing and show done state
         await new Promise(resolve => setTimeout(resolve, 400));
@@ -149,7 +162,7 @@ END:VCARD`;
   const handleSelectChange = (value: QrCodeType) => {
     setQrType(value);
     if (value === 'form') {
-        // No auto-navigation
+      router.push('/private/dashboard');
     }
   }
 
@@ -273,7 +286,7 @@ END:VCARD`;
             </div>
         )
        case 'form':
-        return (
+         return (
           <div className="text-center p-4 border rounded-md">
             <p className="text-sm text-muted-foreground mb-4">Manage your form submissions and settings in the dashboard.</p>
             <Button onClick={() => router.push('/private/dashboard')}>Go to Dashboard</Button>
@@ -299,19 +312,9 @@ END:VCARD`;
   
   const isGenerateDisabled = () => {
       if (isGenerating || isDone) return true;
-      if (qrType === 'form') return true; // Disable for form type itself
-      switch(qrType) {
-          case 'website':
-              return !inputValue;
-          case 'text':
-              return !inputValue;
-          case 'wifi':
-              return !wifiData.ssid;
-          case 'vcard':
-              return !vcardData.firstName || !vcardData.lastName;
-          default:
-              return true;
-      }
+      if (qrType === 'form') return true;
+      if (!qrValue) return true;
+      return false;
   }
   
   const getButtonContent = () => {
@@ -400,7 +403,7 @@ END:VCARD`;
         </CardContent>
         {qrType !== 'form' && (
             <CardFooter className="flex justify-center gap-2">
-                <Button onClick={generateQRCode} disabled={isGenerateDisabled()}>
+                <Button onClick={handleGenerateClick} disabled={isGenerateDisabled()}>
                     {getButtonContent()}
                 </Button>
                 <Button variant="outline" onClick={downloadQRCode} disabled={!qrValue}>
