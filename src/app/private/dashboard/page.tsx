@@ -85,6 +85,31 @@ export default function AdminDashboard() {
         router.push('/login');
     };
 
+    const downloadQRCode = () => {
+        const svg = document.getElementById("form-qr-code-svg");
+        if (svg) {
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                if (ctx) {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                }
+                const pngFile = canvas.toDataURL("image/png");
+                const downloadLink = document.createElement("a");
+                downloadLink.download = "form-qrcode.png";
+                downloadLink.href = pngFile;
+                downloadLink.click();
+            };
+            img.src = "data:image/svg+xml;base64," + btoa(svgData);
+        }
+    };
+
     const handleDownloadCsv = () => {
         if (requests.length === 0 || !formStructure) {
             toast({
@@ -95,7 +120,6 @@ export default function AdminDashboard() {
             return;
         }
         
-        // Generate headers from the form structure and add standard fields
         const dynamicFieldHeaders = formStructure.fields.map(field => field.label);
         
         const headers = [
@@ -110,7 +134,7 @@ export default function AdminDashboard() {
         ];
         
         const csvRows = [
-            headers.join(','), // Header row
+            headers.join(','),
             ...requests.map(req => {
                 const dynamicFieldValues = formStructure.fields.map(field => 
                     `"${req.dynamicFields?.[field.id] || ''}"`
@@ -145,10 +169,9 @@ export default function AdminDashboard() {
         setRequests(prevRequests => 
             prevRequests.map(req => req.id === updatedRequest.id ? updatedRequest : req)
         );
-        fetchRequests(); // Refresh the list from the server
+        fetchRequests(); 
     };
 
-    // Form builder functions
     const handleFieldChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
         if (!formStructure) return;
         const newFields = [...formStructure.fields];
@@ -226,13 +249,18 @@ export default function AdminDashboard() {
                             <CardContent className="flex flex-col items-center justify-center gap-4">
                                 {laptopRequestUrl ? (
                                     <div className="p-4 bg-white rounded-lg border">
-                                        <QRCodeSVG value={laptopRequestUrl} size={200} />
+                                        <QRCodeSVG id="form-qr-code-svg" value={laptopRequestUrl} size={200} />
                                     </div>
                                 ) : (
                                     <p>Loading QR Code...</p>
                                 )}
                                 <Input type="text" value={laptopRequestUrl} readOnly className="text-center bg-gray-100" />
                             </CardContent>
+                             <CardFooter className="flex justify-center">
+                                <Button variant="outline" onClick={downloadQRCode} disabled={!laptopRequestUrl}>
+                                    <Download className="mr-2 h-4 w-4" /> Download QR Code
+                                </Button>
+                            </CardFooter>
                         </Card>
 
                         <Card className="w-full shadow-lg">
