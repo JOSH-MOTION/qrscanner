@@ -64,8 +64,9 @@ export default function AdminDashboard() {
     };
     
     const fetchFormStructure = async () => {
+        if (!user) return;
         try {
-            const structure = await getFormStructure();
+            const structure = await getFormStructure(user.uid);
             setFormStructure(structure);
         } catch (error) {
              console.error("Failed to fetch form structure:", error);
@@ -206,9 +207,9 @@ export default function AdminDashboard() {
     };
         
     const handleSaveFormStructure = async () => {
-        if (!formStructure) return;
+        if (!formStructure || !user) return;
         setIsSaving(true);
-        const result = await saveFormStructure(formStructure);
+        const result = await saveFormStructure(user.uid, formStructure);
         if (result.success) {
         toast({ title: 'Success', description: 'Form structure saved successfully.' });
         } else {
@@ -342,3 +343,5 @@ export default function AdminDashboard() {
         </div>
     );
 }
+
+    

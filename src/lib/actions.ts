@@ -98,9 +98,9 @@ export async function updateLaptopReturn(data: any): Promise<LaptopRequestOutput
     }
 }
 
-export async function saveFormStructure(structure: FormStructureData): Promise<{ success: boolean; message: string }> {
+export async function saveFormStructure(adminId: string, structure: FormStructureData): Promise<{ success: boolean; message: string }> {
     try {
-        const formDocRef = dbAdmin.collection('formStructures').doc('laptopRequest');
+        const formDocRef = dbAdmin.collection('formStructures').doc(adminId);
         await formDocRef.set(structure);
         return { success: true, message: 'Form structure saved successfully.' };
     } catch (error: any) {
@@ -110,8 +110,8 @@ export async function saveFormStructure(structure: FormStructureData): Promise<{
 }
 
 
-export async function getFormStructure(): Promise<FormStructureData | null> {
-    const formDocRef = dbAdmin.collection('formStructures').doc('laptopRequest');
+export async function getFormStructure(adminId: string): Promise<FormStructureData | null> {
+    const formDocRef = dbAdmin.collection('formStructures').doc(adminId);
     const docSnap = await formDocRef.get();
 
     if (docSnap.exists) {
@@ -158,3 +158,5 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
         return null;
     }
 }
+
+    

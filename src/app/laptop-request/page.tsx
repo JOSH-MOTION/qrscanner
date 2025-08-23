@@ -33,7 +33,8 @@ function LaptopRequestForm() {
         }
 
         const fetchStructure = async () => {
-            const structure = await getFormStructure();
+            if (!adminIdFromParams) return;
+            const structure = await getFormStructure(adminIdFromParams);
             setFormStructure(structure);
             if (structure) {
                 const initialData: Record<string, string> = {};
@@ -43,7 +44,9 @@ function LaptopRequestForm() {
                 setFormData(initialData);
             }
         };
-        fetchStructure();
+        if (adminIdFromParams) {
+          fetchStructure();
+        }
     }, [searchParams]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,3 +230,5 @@ export default function LaptopRequestPage() {
         </Suspense>
     )
 }
+
+    
