@@ -49,6 +49,14 @@ type BusinessData = {
   address: string;
 }
 
+const ensureUrlProtocol = (url: string) => {
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url)) {
+        return `https://${url}`;
+    }
+    return url;
+};
+
 
 export default function QRCodeGenerator() {
   const [inputValue, setInputValue] = useState<string>('https://firebase.google.com');
@@ -95,7 +103,7 @@ export default function QRCodeGenerator() {
   const generateQRCodeValue = () => {
       let finalValue = '';
       if (qrType === 'website' || qrType === 'pdf' || qrType === 'images' || qrType === 'video' || qrType === 'menu') {
-        finalValue = inputValue || 'https://';
+        finalValue = ensureUrlProtocol(inputValue);
       } else if (qrType === 'text') {
         finalValue = inputValue || ' ';
       } else if (qrType === 'wifi') {
@@ -113,7 +121,7 @@ ORG:${company}
 TITLE:${jobTitle}
 TEL;TYPE=WORK,VOICE:${phone}
 EMAIL:${email}
-URL:${website}
+URL:${ensureUrlProtocol(website)}
 ADR;TYPE=WORK:;;${street};${city};${state};${zip};${country}
 END:VCARD`;
       } else if (qrType === 'business') {
@@ -123,7 +131,7 @@ END:VCARD`;
 VERSION:3.0
 FN:${name}
 TEL;TYPE=WORK,VOICE:${phone}
-URL:${website}
+URL:${ensureUrlProtocol(website)}
 ADR;TYPE=WORK:;;${address}
 END:VCARD`;
       } else if (qrType === 'form') {
@@ -222,7 +230,7 @@ END:VCARD`;
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="e.g. https://example.com/document.pdf"
+              placeholder="e.g. example.com/document.pdf"
             />
           </div>
         );
@@ -235,7 +243,7 @@ END:VCARD`;
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="e.g. https://example.com/gallery"
+              placeholder="e.g. example.com/gallery"
             />
           </div>
         );
@@ -248,7 +256,7 @@ END:VCARD`;
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="e.g. https://youtube.com/watch?v=..."
+              placeholder="e.g. youtube.com/watch?v=..."
             />
           </div>
         );
@@ -289,7 +297,7 @@ END:VCARD`;
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="e.g. https://example.com/menu"
+              placeholder="e.g. example.com/menu"
             />
           </div>
         );
