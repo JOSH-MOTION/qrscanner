@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 type LaptopRequestWithId = LaptopRequestData & { id: string };
@@ -149,6 +150,13 @@ export default function AdminDashboard() {
         newFields[index] = { ...newFields[index], [e.target.name]: e.target.value };
         setFormStructure({ ...formStructure, fields: newFields });
     };
+
+    const handleFieldTypeChange = (index: number, value: FormFieldData['type']) => {
+        if (!formStructure) return;
+        const newFields = [...formStructure.fields];
+        newFields[index].type = value;
+        setFormStructure({ ...formStructure, fields: newFields });
+    };
         
     const handleRequiredChange = (index: number, checked: boolean) => {
         if (!formStructure) return;
@@ -222,24 +230,39 @@ export default function AdminDashboard() {
                             </CardHeader>
                             <CardContent className="space-y-4 max-h-96 overflow-y-auto p-4">
                                 {formStructure?.fields.map((field, index) => (
-                                    <div key={field.id} className="flex items-center gap-2 p-2 border rounded-md">
-                                        <div className="flex-grow">
-                                            <Label htmlFor={`label-${index}`} className="sr-only">Field Label</Label>
-                                            <Input
-                                                id={`label-${index}`} 
-                                                name="label"
-                                                value={field.label} 
-                                                onChange={(e) => handleFieldChange(index, e)} 
-                                                placeholder="Field Label"
-                                            />
+                                    <div key={field.id} className="p-2 border rounded-md space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-grow">
+                                                <Label htmlFor={`label-${index}`} className="sr-only">Field Label</Label>
+                                                <Input
+                                                    id={`label-${index}`} 
+                                                    name="label"
+                                                    value={field.label} 
+                                                    onChange={(e) => handleFieldChange(index, e)} 
+                                                    placeholder="Field Label"
+                                                />
+                                            </div>
+                                             <Button variant="ghost" size="icon" onClick={() => removeField(index)}>
+                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                            </Button>
                                         </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Switch id={`required-${index}`} checked={field.required} onCheckedChange={(checked) => handleRequiredChange(index, checked)} />
-                                            <Label htmlFor={`required-${index}`} className="text-xs">Required</Label>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <Select value={field.type} onValueChange={(value: FormFieldData['type']) => handleFieldTypeChange(index, value)}>
+                                                <SelectTrigger className="w-auto text-xs h-8">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="text">Text</SelectItem>
+                                                    <SelectItem value="email">Email</SelectItem>
+                                                    <SelectItem value="tel">Phone</SelectItem>
+                                                    <SelectItem value="time">Time</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <div className="flex items-center gap-1.5">
+                                                <Switch id={`required-${index}`} checked={field.required} onCheckedChange={(checked) => handleRequiredChange(index, checked)} />
+                                                <Label htmlFor={`required-${index}`} className="text-xs">Required</Label>
+                                            </div>
                                         </div>
-                                        <Button variant="ghost" size="icon" onClick={() => removeField(index)}>
-                                            <Trash2 className="h-4 w-4 text-red-500" />
-                                        </Button>
                                     </div>
                                 ))}
                                 <Button variant="outline" size="sm" onClick={addField} className="w-full">

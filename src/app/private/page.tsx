@@ -147,11 +147,7 @@ END:VCARD`;
   };
 
   const handleSelectChange = (value: QrCodeType) => {
-    if (value === 'form') {
-      router.push('/private/dashboard');
-    } else {
-      setQrType(value);
-    }
+    setQrType(value);
   }
 
   const renderInputs = () => {
@@ -274,7 +270,12 @@ END:VCARD`;
             </div>
         )
        case 'form':
-        return null;
+        return (
+          <div className="text-center p-4 border rounded-md">
+            <p className="text-sm text-muted-foreground mb-4">Manage your form submissions and settings in the dashboard.</p>
+            <Button onClick={() => router.push('/private/dashboard')}>Go to Dashboard</Button>
+          </div>
+        );
       default:
         return <p className="text-sm text-muted-foreground text-center py-8">Select a QR code type to see more options.</p>;
     }
@@ -305,7 +306,7 @@ END:VCARD`;
           case 'vcard':
               return !vcardData.firstName || !vcardData.lastName;
           case 'form':
-              return true; // Disable generate button for laptop type as it's automatic
+              return false; // Enable for form type to generate the QR code for the link
           default:
               return true;
       }
@@ -365,7 +366,7 @@ END:VCARD`;
             {renderInputs()}
           </div>
           
-          {qrValue && (
+          {qrValue && qrType !== 'form' && (
             <div className="p-4 bg-white rounded-lg border">
               <QRCodeSVG 
                 id="qr-code-svg" 
@@ -393,14 +394,16 @@ END:VCARD`;
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-center gap-2">
-          <Button onClick={generateQRCode} disabled={isGenerateDisabled()}>
-            {getButtonContent()}
-            </Button>
-          <Button variant="outline" onClick={downloadQRCode} disabled={!qrValue}>
-            Download
-          </Button>
-        </CardFooter>
+        {qrType !== 'form' && (
+            <CardFooter className="flex justify-center gap-2">
+                <Button onClick={generateQRCode} disabled={isGenerateDisabled()}>
+                    {getButtonContent()}
+                </Button>
+                <Button variant="outline" onClick={downloadQRCode} disabled={!qrValue}>
+                    Download
+                </Button>
+            </CardFooter>
+        )}
       </Card>
     </div>
   );
