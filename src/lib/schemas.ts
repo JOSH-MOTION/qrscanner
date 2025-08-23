@@ -7,7 +7,7 @@ import { z } from 'zod';
 export const FormFieldSchema = z.object({
     id: z.string(),
     label: z.string(),
-    type: z.enum(['text', 'time', 'email', 'tel']),
+    type: z.enum(['text', 'time', 'email', 'tel', 'date']),
     required: z.boolean(),
 });
 
@@ -66,5 +66,3 @@ export const UserProfileSchema = z.object({
 });
 
 export type UserProfile = z.infer<typeof UserProfileSchema>;
-
-    

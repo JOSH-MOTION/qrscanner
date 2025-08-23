@@ -129,8 +129,8 @@ function LaptopRequestForm() {
             <Toaster />
             <Card className="w-full max-w-lg mx-auto shadow-lg">
                 <CardHeader>
-                    <CardTitle>Codetrain Africa</CardTitle>
-                    <CardDescription>Laptop Request Form</CardDescription>
+                    <CardTitle>Form Submission</CardTitle>
+                    <CardDescription>Please fill out the form below.</CardDescription>
                 </CardHeader>
                 <form onSubmit={handleSubmit}>
                     <CardContent>
@@ -182,10 +182,6 @@ function LaptopRequestForm() {
                                 </>
                             )}
                         </div>
-                        <div className="mt-6 space-y-2 text-sm text-muted-foreground">
-                            <p className="font-bold">Student Agreement</p>
-                            <p>I agree to take care of the Codetrain Africa laptop while using it and return it immediately after class.</p>
-                        </div>
                     </CardContent>
                     <CardFooter className="flex justify-end">
                         <Button type="submit" disabled={isSubmitting || !isFormValid()}>
@@ -203,8 +199,8 @@ function FormSkeleton() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
             <Card className="w-full max-w-lg mx-auto shadow-lg">
                 <CardHeader>
-                    <CardTitle>Codetrain Africa</CardTitle>
-                    <CardDescription>Laptop Request Form</CardDescription>
+                    <CardTitle>Form Submission</CardTitle>
+                    <CardDescription>Please fill out the form below.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">

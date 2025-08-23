@@ -255,6 +255,7 @@ export default function AdminDashboard() {
                                                     <SelectItem value="text">Text</SelectItem>
                                                     <SelectItem value="email">Email</SelectItem>
                                                     <SelectItem value="tel">Phone</SelectItem>
+                                                    <SelectItem value="date">Date</SelectItem>
                                                     <SelectItem value="time">Time</SelectItem>
                                                 </SelectContent>
                                             </Select>
