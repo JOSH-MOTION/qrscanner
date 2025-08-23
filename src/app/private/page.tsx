@@ -1,14 +1,14 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, LayoutDashboard, Trash2, Plus, Save } from 'lucide-react';
+import { QrCode, Palette, Globe, FileText, ImageIcon, Video, Wifi, BookOpen, Briefcase, Contact, Laptop, LogOut, LayoutDashboard, Trash2, Plus, Save, Loader2, Check } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -54,7 +54,9 @@ export default function QRCodeGenerator() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+
+  const [isGenerating, setIsGenerating] = useTransition();
+  const [isDone, setIsDone] = useState(false);
 
 
   const [wifiData, setWifiData] = useState<WifiData>({ ssid: '', encryption: 'WPA', password: '' });
@@ -81,91 +83,28 @@ export default function QRCodeGenerator() {
     if (typeof window !== 'undefined' && user) {
       const url = `${window.location.origin}/laptop-request?adminId=${user.uid}`;
       setLaptopRequestUrl(url);
-      if (qrType === 'laptop') {
-        setQrValue(url);
-      }
     }
-  }, [qrType, user]);
-  
-  useEffect(() => {
-    async function fetchStructure() {
-        if (qrType === 'laptop') {
-            const structure = await getFormStructure();
-            setFormStructure(structure);
-        }
-    }
-    fetchStructure();
-  }, [qrType]);
-
-
-  const handleWifiChange = (e: React.ChangeEvent<HTMLInputElement> | string, field: keyof WifiData | 'encryption') => {
-    if (typeof e === 'string') {
-        setWifiData(prev => ({ ...prev, encryption: e as WifiData['encryption'] }));
-    } else {
-        setWifiData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    }
-  };
-
-  const handleVcardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setVcardData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut(auth);
     router.push('/login');
   };
 
-  // Dynamic form functions
-  const handleFieldChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!formStructure) return;
-    const newFields = [...formStructure.fields];
-    newFields[index] = { ...newFields[index], [e.target.name]: e.target.value };
-    setFormStructure({ ...formStructure, fields: newFields });
-  };
-    
-  const handleRequiredChange = (index: number, checked: boolean) => {
-    if (!formStructure) return;
-    const newFields = [...formStructure.fields];
-    newFields[index].required = checked;
-    setFormStructure({ ...formStructure, fields: newFields });
-  };
-
-  const addField = () => {
-    if (!formStructure) return;
-    const newField: FormFieldData = { id: `custom_${Date.now()}`, label: '', type: 'text', required: false };
-    setFormStructure(prev => prev ? ({ ...prev, fields: [...prev.fields, newField] }) : null);
-  };
-
-  const removeField = (index: number) => {
-    if (!formStructure) return;
-    const newFields = formStructure.fields.filter((_, i) => i !== index);
-    setFormStructure({ ...formStructure, fields: newFields });
-  };
-    
-  const handleSaveFormStructure = async () => {
-    if (!formStructure) return;
-    setIsSaving(true);
-    const result = await saveFormStructure(formStructure);
-    if (result.success) {
-      toast({ title: 'Success', description: 'Form structure saved successfully.' });
-    } else {
-      toast({ variant: 'destructive', title: 'Error', description: result.message });
-    }
-    setIsSaving(false);
-  };
-
-  const generateQRCode = async () => {
-    setIsGenerating(true);
-    if (qrType === 'website') {
-      setQrValue(inputValue);
-    } else if (qrType === 'text') {
-      setQrValue(inputValue);
-    } else if (qrType === 'wifi') {
-      const { ssid, encryption, password } = wifiData;
-      setQrValue(`WIFI:T:${encryption};S:${ssid};${encryption !== 'nopass' ? `P:${password};` : ''};`);
-    } else if (qrType === 'vcard') {
-      const { firstName, lastName, phone, email, company, jobTitle, website, street, city, state, zip, country } = vcardData;
-      const vCardString = `BEGIN:VCARD
+  const generateQRCode = () => {
+    setIsDone(false);
+    setIsGenerating(async () => {
+        let finalValue = '';
+        if (qrType === 'website') {
+          finalValue = inputValue;
+        } else if (qrType === 'text') {
+          finalValue = inputValue;
+        } else if (qrType === 'wifi') {
+          const { ssid, encryption, password } = wifiData;
+          finalValue = `WIFI:T:${encryption};S:${ssid};${encryption !== 'nopass' ? `P:${password};` : ''};`;
+        } else if (qrType === 'vcard') {
+          const { firstName, lastName, phone, email, company, jobTitle, website, street, city, state, zip, country } = vcardData;
+          finalValue = `BEGIN:VCARD
 VERSION:3.0
 N:${lastName};${firstName}
 FN:${firstName} ${lastName}
@@ -176,12 +115,17 @@ EMAIL:${email}
 URL:${website}
 ADR;TYPE=WORK:;;${street};${city};${state};${zip};${country}
 END:VCARD`;
-      setQrValue(vCardString);
-    } else if (qrType === 'laptop') {
-        setQrValue(laptopRequestUrl);
-    }
-    // A small delay to give the user feedback
-    setTimeout(() => setIsGenerating(false), 300);
+        } else if (qrType === 'laptop') {
+            finalValue = laptopRequestUrl;
+        }
+        setQrValue(finalValue);
+
+        // Simulate processing and show done state
+        await new Promise(resolve => setTimeout(resolve, 400));
+        setIsDone(true);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsDone(false);
+    });
   };
 
   const downloadQRCode = () => {
@@ -208,6 +152,14 @@ END:VCARD`;
       img.src = "data:image/svg+xml;base64," + btoa(svgData);
     }
   };
+
+  const handleSelectChange = (value: QrCodeType) => {
+    if (value === 'laptop') {
+        router.push('/private/dashboard');
+    } else {
+        setQrType(value);
+    }
+  }
 
   const renderInputs = () => {
     switch(qrType) {
@@ -237,54 +189,16 @@ END:VCARD`;
             />
           </div>
         );
-      case 'laptop':
-        return (
-           <div className="w-full space-y-4">
-                <div className="space-y-2 text-center">
-                    <p className="text-sm text-muted-foreground">
-                        This will generate a QR code that directs students to the laptop request form.
-                        Customize the fields below.
-                    </p>
-                    <Input type="text" value={laptopRequestUrl} readOnly className="text-center bg-gray-100" />
-                </div>
-                <div className="space-y-4 rounded-md border p-4 max-h-60 overflow-y-auto">
-                    <h4 className="text-sm font-medium">Form Fields</h4>
-                    {formStructure?.fields.map((field, index) => (
-                        <div key={field.id} className="flex items-center gap-2">
-                            <Input 
-                                name="label"
-                                value={field.label} 
-                                onChange={(e) => handleFieldChange(index, e)} 
-                                placeholder="Field Label"
-                            />
-                            <div className="flex items-center gap-1.5">
-                                <Label htmlFor={`required-${index}`} className="text-xs">Required</Label>
-                                <Switch id={`required-${index}`} checked={field.required} onCheckedChange={(checked) => handleRequiredChange(index, checked)} />
-                            </div>
-                            <Button variant="ghost" size="icon" onClick={() => removeField(index)}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={addField} className="w-full">
-                        <Plus className="mr-2 h-4 w-4" /> Add Field
-                    </Button>
-                </div>
-                <Button onClick={handleSaveFormStructure} disabled={isSaving} className="w-full">
-                    <Save className="mr-2 h-4 w-4" /> {isSaving ? 'Saving...' : 'Save Form Structure'}
-                </Button>
-           </div>
-        )
       case 'wifi':
         return (
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="ssid">Network Name (SSID)</Label>
-              <Input id="ssid" name="ssid" value={wifiData.ssid} onChange={(e) => handleWifiChange(e, 'ssid')} placeholder="e.g. MyHomeWiFi" />
+              <Input id="ssid" name="ssid" value={wifiData.ssid} onChange={(e) => setWifiData(prev => ({...prev, ssid: e.target.value}))} placeholder="e.g. MyHomeWiFi" />
             </div>
             <div className="space-y-2">
               <Label>Encryption</Label>
-              <Select value={wifiData.encryption} onValueChange={(value) => handleWifiChange(value, 'encryption')}>
+              <Select value={wifiData.encryption} onValueChange={(value: WifiData['encryption']) => setWifiData(prev => ({...prev, encryption: value}))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -298,7 +212,7 @@ END:VCARD`;
             {wifiData.encryption !== 'nopass' && (
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" value={wifiData.password || ''} onChange={(e) => handleWifiChange(e, 'password')} />
+                <Input id="password" name="password" type="password" value={wifiData.password || ''} onChange={(e) => setWifiData(prev => ({ ...prev, password: e.target.value }))} />
               </div>
             )}
           </div>
@@ -309,65 +223,65 @@ END:VCARD`;
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="firstName">First Name</Label>
-                        <Input id="firstName" name="firstName" value={vcardData.firstName} onChange={handleVcardChange} />
+                        <Input id="firstName" name="firstName" value={vcardData.firstName} onChange={(e) => setVcardData(prev => ({...prev, firstName: e.target.value}))} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="lastName">Last Name</Label>
-                        <Input id="lastName" name="lastName" value={vcardData.lastName} onChange={handleVcardChange} />
+                        <Input id="lastName" name="lastName" value={vcardData.lastName} onChange={(e) => setVcardData(prev => ({...prev, lastName: e.target.value}))} />
                     </div>
                 </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="phone">Phone</Label>
-                        <Input id="phone" name="phone" type="tel" value={vcardData.phone} onChange={handleVcardChange} />
+                        <Input id="phone" name="phone" type="tel" value={vcardData.phone} onChange={(e) => setVcardData(prev => ({...prev, phone: e.target.value}))} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" name="email" type="email" value={vcardData.email} onChange={handleVcardChange} />
+                        <Input id="email" name="email" type="email" value={vcardData.email} onChange={(e) => setVcardData(prev => ({...prev, email: e.target.value}))} />
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="company">Company</Label>
-                        <Input id="company" name="company" value={vcardData.company} onChange={handleVcardChange} />
+                        <Input id="company" name="company" value={vcardData.company} onChange={(e) => setVcardData(prev => ({...prev, company: e.target.value}))} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="jobTitle">Job Title</Label>
-                        <Input id="jobTitle" name="jobTitle" value={vcardData.jobTitle} onChange={handleVcardChange} />
+                        <Input id="jobTitle" name="jobTitle" value={vcardData.jobTitle} onChange={(e) => setVcardData(prev => ({...prev, jobTitle: e.target.value}))} />
                     </div>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="website">Website</Label>
-                    <Input id="website" name="website" value={vcardData.website} onChange={handleVcardChange} />
+                    <Input id="website" name="website" value={vcardData.website} onChange={(e) => setVcardData(prev => ({...prev, website: e.target.value}))} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="street">Street</Label>
-                    <Input id="street" name="street" value={vcardData.street} onChange={handleVcardChange} />
+                    <Input id="street" name="street" value={vcardData.street} onChange={(e) => setVcardData(prev => ({...prev, street: e.target.value}))} />
                 </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="city">City</Label>
-                        <Input id="city" name="city" value={vcardData.city} onChange={handleVcardChange} />
+                        <Input id="city" name="city" value={vcardData.city} onChange={(e) => setVcardData(prev => ({...prev, city: e.target.value}))} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="state">State</Label>
-                        <Input id="state" name="state" value={vcardData.state} onChange={handleVcardChange} />
+                        <Input id="state" name="state" value={vcardData.state} onChange={(e) => setVcardData(prev => ({...prev, state: e.target.value}))} />
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="zip">ZIP Code</Label>
-                        <Input id="zip" name="zip" value={vcardData.zip} onChange={handleVcardChange} />
+                        <Input id="zip" name="zip" value={vcardData.zip} onChange={(e) => setVcardData(prev => ({...prev, zip: e.target.value}))} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="country">Country</Label>
-                        <Input id="country" name="country" value={vcardData.country} onChange={handleVcardChange} />
+                        <Input id="country" name="country" value={vcardData.country} onChange={(e) => setVcardData(prev => ({...prev, country: e.target.value}))} />
                     </div>
                 </div>
             </div>
         )
       default:
-        return <p className="text-sm text-muted-foreground text-center">Select a QR code type to see more options.</p>;
+        return <p className="text-sm text-muted-foreground text-center py-8">Select a QR code type to see more options.</p>;
     }
   }
 
@@ -385,7 +299,7 @@ END:VCARD`;
   ];
   
   const isGenerateDisabled = () => {
-      if (isGenerating) return true;
+      if (isGenerating || isDone) return true;
       switch(qrType) {
           case 'website':
               return !inputValue;
@@ -395,11 +309,19 @@ END:VCARD`;
               return !wifiData.ssid;
           case 'vcard':
               return !vcardData.firstName || !vcardData.lastName;
-          case 'laptop':
-              return !laptopRequestUrl;
           default:
               return true;
       }
+  }
+  
+  const getButtonContent = () => {
+    if (isGenerating) {
+        return <> <Loader2 className="animate-spin" /> Generating... </>;
+    }
+    if (isDone) {
+        return <> <Check /> Done </>;
+    }
+    return 'Generate QR Code';
   }
 
   return (
@@ -414,11 +336,6 @@ END:VCARD`;
                  {userProfile && <p className="text-sm text-muted-foreground mt-1">Welcome, {userProfile.username}!</p>}
             </div>
             <div className="flex items-center gap-2">
-                <Link href="/private/dashboard">
-                    <Button variant="outline" size="icon">
-                        <LayoutDashboard className="w-5 h-5" />
-                    </Button>
-                </Link>
                 <Button variant="ghost" size="icon" onClick={handleLogout}>
                     <LogOut className="w-5 h-5" />
                 </Button>
@@ -428,7 +345,7 @@ END:VCARD`;
           <div className="w-full space-y-4">
             <div className="space-y-2">
               <Label>QR Code Type</Label>
-              <Select value={qrType} onValueChange={(value) => setQrType(value as QrCodeType)}>
+              <Select value={qrType} onValueChange={(value) => handleSelectChange(value as QrCodeType)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select an Option" />
                 </SelectTrigger>
@@ -481,7 +398,7 @@ END:VCARD`;
         </CardContent>
         <CardFooter className="flex justify-center gap-2">
           <Button onClick={generateQRCode} disabled={isGenerateDisabled()}>
-            {isGenerating ? 'Generating...' : 'Generate QR Code'}
+            {getButtonContent()}
             </Button>
           <Button variant="outline" onClick={downloadQRCode} disabled={!qrValue}>
             Download
