@@ -285,17 +285,17 @@ END:VCARD`;
     }
   }
 
-  const qrOptions: { value: QrCodeType; label: string; icon: React.ElementType }[] = [
-    { value: 'website', label: 'Website', icon: Globe },
-    { value: 'text', label: 'Text', icon: FileText },
-    { value: 'laptop', label: 'Laptop Request', icon: Laptop },
-    { value: 'pdf', label: 'PDF', icon: FileText },
-    { value: 'images', label: 'Images', icon: ImageIcon },
-    { value: 'video', label: 'Video', icon: Video },
-    { value: 'wifi', label: 'WiFi', icon: Wifi },
-    { value: 'menu', label: 'Menu', icon: BookOpen },
-    { value: 'business', label: 'Business', icon: Briefcase },
-    { value: 'vcard', label: 'vCard', icon: Contact },
+  const qrOptions: { value: QrCodeType; label: string; icon: React.ElementType, color: string }[] = [
+    { value: 'website', label: 'Website', icon: Globe, color: 'text-blue-500' },
+    { value: 'text', label: 'Text', icon: FileText, color: 'text-gray-500' },
+    { value: 'laptop', label: 'Laptop Request', icon: Laptop, color: 'text-purple-500' },
+    { value: 'pdf', label: 'PDF', icon: FileText, color: 'text-red-500' },
+    { value: 'images', label: 'Images', icon: ImageIcon, color: 'text-pink-500' },
+    { value: 'video', label: 'Video', icon: Video, color: 'text-rose-500' },
+    { value: 'wifi', label: 'WiFi', icon: Wifi, color: 'text-cyan-500' },
+    { value: 'menu', label: 'Menu', icon: BookOpen, color: 'text-amber-500' },
+    { value: 'business', label: 'Business', icon: Briefcase, color: 'text-orange-500' },
+    { value: 'vcard', label: 'vCard', icon: Contact, color: 'text-green-500' },
   ];
   
   const isGenerateDisabled = () => {
@@ -357,7 +357,7 @@ END:VCARD`;
                     return (
                       <SelectItem key={opt.value} value={opt.value}>
                         <div className="flex items-center gap-2">
-                          <Icon className="w-4 h-4" />
+                          <Icon className={`w-4 h-4 ${opt.color}`} />
                           <span>{opt.label}</span>
                         </div>
                       </SelectItem>

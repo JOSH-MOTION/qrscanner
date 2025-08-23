@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -28,6 +29,12 @@ const nextConfig: NextConfig = {
 
     return config;
   },
+  experimental: {
+    serverActions: {
+      // 5MB
+      bodySizeLimit: 5 * 1024 * 1024,
+    }
+  }
 };
 
 export default nextConfig;
